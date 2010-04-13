@@ -8,11 +8,14 @@ int main (int argc, const char* argv[])
 	printf("Little Interpreted Language Interactive Shell\n");
 	while (1) {
 		lil_value_t result;
+		const char* strres;
 		buffer[0] = 0;
 		printf("# ");
 		if (!fgets(buffer, 16384, stdin)) break;
 		result = lil_parse(lil, buffer);
-		printf("-> %s\n", lil_to_string(result));
+		strres = lil_to_string(result);
+		if (strres[0])
+			printf(" -> %s\n", strres);
 		lil_release(result);
 	}
 	lil_free(lil);
