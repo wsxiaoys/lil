@@ -37,6 +37,12 @@ int lil_register(lil_t lil, const char* name, lil_command_proc_t proc);
 lil_value_t lil_parse(lil_t lil, const char* code);
 
 const char* lil_to_string(lil_value_t val);
+double lil_to_double(lil_value_t val);
+int lil_to_integer(lil_value_t val);
+
+lil_value_t lil_alloc_string(const char* str);
+lil_value_t lil_alloc_double(double num);
+lil_value_t lil_alloc_integer(int num);
 void lil_release(lil_value_t val);
 
 #endif

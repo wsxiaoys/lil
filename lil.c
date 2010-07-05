@@ -77,6 +77,14 @@ struct _lil_t
 	int breakrun;
 };
 
+typedef struct _expreval_t
+{
+	const char* code;
+	size_t len, head;
+	int64_t ival;
+	double dval;
+} expreval_t;
+
 static lil_value_t next_word(lil_t lil);
 static void register_stdcmds(lil_t lil);
 
@@ -446,64 +454,91 @@ static lil_value_t next_word(lil_t lil)
 	return val;
 }
 
+static lil_list_t substitute(lil_t lil)
+{
+	lil_list_t words = lil_alloc_list();
+	
+	skip_spaces(lil);
+	while (lil->head < lil->clen && !ateol(lil)) {
+		lil_value_t w = alloc_value(NULL);
+		do {
+			size_t head = lil->head;
+			lil_value_t wp = next_word(lil);
+			if (head == lil->head) { /* something wrong, the parser can't proceed */
+				free_value(w);
+				free_value(wp);
+				lil_free_list(words);
+				return NULL;
+			}
+			append_val(w, wp);
+			free_value(wp);
+		} while (lil->head < lil->clen && !ateol(lil) && !isspace(lil->code[lil->head]));
+		skip_spaces(lil);
+		
+		lil_list_append(words, w);
+	}
+	
+	return words;
+}
+
+lil_list_t lil_subst_to_list(lil_t lil, lil_value_t code)
+{
+	const char* save_code = lil->code;
+	size_t save_clen = lil->clen;
+	size_t save_head = lil->head;
+	lil_list_t words;
+	lil->code = lil_to_string(code);
+	lil->clen = code->l;
+	lil->head = 0;
+	words = substitute(lil);
+	lil->code = save_code;
+	lil->clen = save_clen;
+	lil->head = save_head;
+	return words;
+}
+
+lil_value_t lil_subst_to_value(lil_t lil, lil_value_t code)
+{
+	lil_list_t words = lil_subst_to_list(lil, code);
+	lil_value_t val;
+	if (!words) return clone_value(code);
+	val = lil_list_to_value(words);
+	lil_free_list(words);
+	return val;
+}
+
 lil_value_t lil_parse(lil_t lil, const char* code)
 {
 	const char* save_code = lil->code;
 	size_t save_clen = lil->clen;
 	size_t save_head = lil->head;
 	lil_value_t val = NULL;
-	lil_value_t* word = NULL;
-	lil_value_t* nword;
-	size_t i, words = 0;
+	lil_list_t words = NULL;
 	lil->code = code;
 	lil->clen = strlen(code);
 	lil->head = 0;
 	skip_spaces(lil);
 	while (lil->head < lil->clen) {
-		for (i=0; i<words; i++) free_value(word[i]);
-		free(word);
-		words = 0;
-		word = NULL;
+		if (words) lil_free_list(words);
 		if (val) free_value(val);
 		val = NULL;
 		
-		while (lil->head < lil->clen && !ateol(lil)) {
-			lil_value_t w = alloc_value(NULL);
-			do {
-				size_t head = lil->head;
-				lil_value_t wp = next_word(lil);
-				if (head == lil->head) { /* something wrong, the parser can't proceed */
-					free_value(w);
-					free_value(wp);
-					goto cleanup;
-				}
-				append_val(w, wp);
-				free_value(wp);
-			} while (lil->head < lil->clen && !ateol(lil) && !isspace(lil->code[lil->head]));
-			skip_spaces(lil);
-					
-			nword = realloc(word, sizeof(lil_value_t)*(words + 1));
-			if (!nword) {
-				/* TODO: report memory error */
-				goto cleanup;
-			}
-			nword[words++] = w;
-			word = nword;
-		}
+		words = substitute(lil);
+		if (!words)	goto cleanup;
 		
-		if (words) {
-			lil_command_t cmd = find_cmd(lil, lil_to_string(word[0]));
+		if (words->c) {
+			lil_command_t cmd = find_cmd(lil, lil_to_string(words->v[0]));
 			if (!cmd) {
-				printf("unknown command %s\n", lil_to_string(word[0]));
+				printf("unknown command %s\n", lil_to_string(words->v[0]));
 				goto cleanup;
 			}
 			if (cmd->proc) {
-				val = cmd->proc(lil, words - 1, word + 1);
+				val = cmd->proc(lil, words->c - 1, words->v + 1);
 			} else {
 				size_t i;
 				push_env(lil);
 				for (i=0; i<cmd->argnames->c; i++) {
-					set_var(lil, lil_to_string(cmd->argnames->v[i]), i < words - 1 ? word[i + 1] : lil->empty, 2);
+					set_var(lil, lil_to_string(cmd->argnames->v[i]), i < words->c - 1 ? words->v[i + 1] : lil->empty, 2);
 				}
 				val = lil_parse(lil, lil_to_string(cmd->code));
 				pop_env(lil);
@@ -515,17 +550,138 @@ lil_value_t lil_parse(lil_t lil, const char* code)
 		skip_spaces(lil);
 	}
 cleanup:
-	for (i=0; i<words; i++) free_value(word[i]);
-	free(word);
+	if (words) lil_free_list(words);
 	lil->code = save_code;
 	lil->clen = save_clen;
 	lil->head = save_head;
 	return val ? val : alloc_value(NULL);
 }
 
+#define EE_INT 0
+#define EE_FLOAT 1
+
+static void ee_expr(expreval_t* ee);
+
+static void ee_skip_spaces(expreval_t* ee)
+{
+	while (ee->head < ee->len && isspace(ee->code[ee->head])) ee->head++;
+}
+
+static void ee_element(expreval_t* ee)
+{
+}
+
+static void ee_paren(expreval_t* ee)
+{
+	if (ee->code[ee->head] == '(') {
+		ee->head++;
+		ee_expr(ee);
+		if (ee->code[ee->head] == ')') ee->head++;
+	} else ee_element(ee);
+}
+		
+static void ee_unary(expreval_t* ee)
+{
+	ee_paren(ee);
+}
+
+static void ee_muldiv(expreval_t* ee)
+{
+	ee_unary(ee);
+}
+
+static void ee_addsub(expreval_t* ee)
+{
+	ee_muldiv(ee);
+}
+
+static void ee_shift(expreval_t* ee)
+{
+	ee_addsub(ee);
+}
+
+static void ee_compare(expreval_t* ee)
+{
+	ee_shift(ee);
+}
+
+static void ee_equals(expreval_t* ee)
+{
+	ee_compare(ee);
+}
+
+static void ee_bitand(expreval_t* ee)
+{
+	ee_equals(ee);
+}
+
+static void ee_bitor(expreval_t* ee)
+{
+	ee_bitand(ee);
+}
+
+static void ee_logand(expreval_t* ee)
+{
+	ee_bitor(ee);
+}
+
+static void ee_logor(expreval_t* ee)
+{
+	ee_logand(ee);
+}
+
+static void ee_expr(expreval_t* ee)
+{
+	ee_logor(ee);
+}
+
+lil_value_t lil_eval_expr(lil_t lil, lil_value_t code)
+{
+	lil_value_t val = NULL;
+	expreval_t ee;
+	int et;
+	double r = 0;
+	code = lil_subst_to_value(lil, code);
+	ee.code = lil_to_string(code);
+	ee.head = 0;
+	ee.len = code->l;
+	ee_expr(&ee);
+	free_value(code);
+	return lil_alloc_double(r);
+}
+
 const char* lil_to_string(lil_value_t val)
 {
 	return val->d ? val->d : "";
+}
+
+double lil_to_double(lil_value_t val)
+{
+	return atof(lil_to_string(val));
+}
+
+int lil_to_integer(lil_value_t val)
+{
+	return atoi(lil_to_string(val));
+}
+
+lil_value_t lil_alloc_string(const char* str)
+{
+	return alloc_value(str);
+}
+
+lil_value_t lil_alloc_double(double num)
+{
+	char buff[128];
+	sprintf(buff, "%f", num);
+	return alloc_value(buff);
+}
+
+lil_value_t lil_alloc_integer(int num)
+{
+	char buff[64];
+	sprintf(buff, "%i", num);
+	return alloc_value(buff);
 }
 
 void lil_release(lil_value_t val)
@@ -637,6 +793,23 @@ static lil_value_t cmd_return(lil_t lil, size_t argc, lil_value_t* argv)
 	return argc < 1 ? NULL : clone_value(argv[0]);
 }
 
+static lil_value_t cmd_expr(lil_t lil, size_t argc, lil_value_t* argv)
+{
+	if (argc == 1) return lil_eval_expr(lil, argv[0]);
+	if (argc > 1) {
+		lil_value_t val = alloc_value(NULL), r;
+		size_t i;
+		for (i=0; i<argc; i++) {
+			if (i) append_char(val, ' ');
+			append_val(val, argv[i]);
+		}
+		r = lil_eval_expr(lil, val);
+		free_value(val);
+		return r;
+	}
+	return NULL;
+}
+
 static void register_stdcmds(lil_t lil)
 {
 	lil_register(lil, "command", cmd_command);
@@ -647,4 +820,5 @@ static void register_stdcmds(lil_t lil)
 	lil_register(lil, "count", cmd_count);
 	lil_register(lil, "foreach", cmd_foreach);
 	lil_register(lil, "return", cmd_return);
+	lil_register(lil, "expr", cmd_expr);
 }
