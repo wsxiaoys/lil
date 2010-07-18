@@ -1,5 +1,5 @@
 /*
- * LIL - Little Interpreted Language
+ * LILCGI - Little Interpreted Language CGI runner
  * Copyright (C) 2010 Kostas Michalopoulos
  *
  * This software is provided 'as-is', without any express or implied
@@ -20,27 +20,10 @@
  *
  * Kostas Michalopoulos <badsector@runtimeterror.com>
  */
+#ifndef DB_H_
+#define DB_H_
 
-#include <stdio.h>
-#include "lil.h"
+void db_register_funcs(lil_t lil);
+void db_shutdown(void);
 
-int main (int argc, const char* argv[])
-{
-	char buffer[16384];
-	lil_t lil = lil_new();
-	printf("Little Interpreted Language Interactive Shell\n");
-	while (1) {
-		lil_value_t result;
-		const char* strres;
-		buffer[0] = 0;
-		printf("# ");
-		if (!fgets(buffer, 16384, stdin)) break;
-		result = lil_parse(lil, buffer, 1);
-		strres = lil_to_string(result);
-		if (strres[0])
-			printf(" -> %s\n", strres);
-		lil_free_value(result);
-	}
-	lil_free(lil);
-    return 0;
-}
+#endif /* DB_H_ */
