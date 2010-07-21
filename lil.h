@@ -43,7 +43,8 @@ void lil_free(lil_t lil);
 
 int lil_register(lil_t lil, const char* name, lil_func_proc_t proc);
 
-lil_value_t lil_parse(lil_t lil, const char* code, int funclevel);
+lil_value_t lil_parse(lil_t lil, const char* code, size_t codelen, int funclevel);
+lil_value_t lil_parse_value(lil_t lil, lil_value_t val, int funclevel);
 
 const char* lil_to_string(lil_value_t val);
 double lil_to_double(lil_value_t val);

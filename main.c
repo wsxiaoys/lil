@@ -35,7 +35,7 @@ int main (int argc, const char* argv[])
 		buffer[0] = 0;
 		printf("# ");
 		if (!fgets(buffer, 16384, stdin)) break;
-		result = lil_parse(lil, buffer, 1);
+		result = lil_parse(lil, buffer, 0, 1);
 		strres = lil_to_string(result);
 		if (strres[0])
 			printf(" -> %s\n", strres);

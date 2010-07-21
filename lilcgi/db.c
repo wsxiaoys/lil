@@ -246,7 +246,7 @@ static int db_exec_callback(void* ptr, int cols, char** colvals, char** colnames
         lil_free_value(tcolnames);
     }
 
-    lil_free_value(lil_parse(ctx->lil, ctx->code, 0));
+    lil_free_value(lil_parse(ctx->lil, ctx->code, 0, 0));
     return r;
 }
 

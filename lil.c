@@ -404,7 +404,7 @@ static lil_value_t get_bracketpart(lil_t lil)
 			lil_append_char(cmd, lil->code[lil->head++]);
 		}
 	}
-	val = lil_parse(lil, lil_to_string(cmd), 0);
+	val = lil_parse_value(lil, cmd, 0);
 	lil_free_value(cmd);
 	return val;
 }
@@ -417,7 +417,7 @@ static lil_value_t get_dollarpart(lil_t lil)
 	tmp = alloc_value("set ");
 	lil_append_val(tmp, name);
 	lil_free_value(name);
-	val = lil_parse(lil, lil_to_string(tmp), 0);
+	val = lil_parse_value(lil, tmp, 0);
 	lil_free_value(tmp);
 	return val;
 }
@@ -541,7 +541,7 @@ lil_value_t lil_subst_to_value(lil_t lil, lil_value_t code)
 	return val;
 }
 
-lil_value_t lil_parse(lil_t lil, const char* code, int funclevel)
+lil_value_t lil_parse(lil_t lil, const char* code, size_t codelen, int funclevel)
 {
 	const char* save_code = lil->code;
 	size_t save_clen = lil->clen;
@@ -549,7 +549,7 @@ lil_value_t lil_parse(lil_t lil, const char* code, int funclevel)
 	lil_value_t val = NULL;
 	lil_list_t words = NULL;
 	lil->code = code;
-	lil->clen = strlen(code);
+	lil->clen = codelen ? codelen : strlen(code);
 	lil->head = 0;
 	skip_spaces(lil);
 	while (lil->head < lil->clen) {
@@ -580,7 +580,7 @@ lil_value_t lil_parse(lil_t lil, const char* code, int funclevel)
                         lil_set_var(lil, lil_to_string(cmd->argnames->v[i]), i < words->c - 1 ? words->v[i + 1] : lil->empty, LIL_SETVAR_LOCAL_NEW);
                     }
 				}
-				val = lil_parse(lil, lil_to_string(cmd->code), 1);
+				val = lil_parse_value(lil, cmd->code, 1);
 				lil_pop_env(lil);
 			}
 		}
@@ -603,6 +603,12 @@ cleanup:
         lil->breakrun = 0;
 	}
 	return val ? val : alloc_value(NULL);
+}
+
+lil_value_t lil_parse_value(lil_t lil, lil_value_t val, int funclevel)
+{
+    if (!val) return alloc_value(NULL);
+    return lil_parse(lil, val->d, val->l, funclevel);
 }
 
 #define EE_INT 0
@@ -1812,7 +1818,7 @@ static lil_value_t fnc_print(lil_t lil, size_t argc, lil_value_t* argv)
 
 static lil_value_t fnc_eval(lil_t lil, size_t argc, lil_value_t* argv)
 {
-	if (argc == 1) return lil_parse(lil, lil_to_string(argv[0]), 1);
+	if (argc == 1) return lil_parse_value(lil, argv[0], 1);
 	if (argc > 1) {
 		lil_value_t val = alloc_value(NULL), r;
 		size_t i;
@@ -1820,7 +1826,7 @@ static lil_value_t fnc_eval(lil_t lil, size_t argc, lil_value_t* argv)
 			if (i) lil_append_char(val, ' ');
 			lil_append_val(val, argv[i]);
 		}
-		r = lil_parse(lil, lil_to_string(val), 1);
+		r = lil_parse_value(lil, val, 1);
 		lil_free_value(val);
 		return r;
 	}
@@ -1923,7 +1929,7 @@ static lil_value_t fnc_foreach(lil_t lil, size_t argc, lil_value_t* argv)
 	for (i=0; i<list->c; i++) {
 		lil_value_t rv;
 		lil_set_var(lil, varname, list->v[i], LIL_SETVAR_LOCAL);
-		rv = lil_parse(lil, lil_to_string(argv[codeidx]), 1);
+		rv = lil_parse_value(lil, argv[codeidx], 1);
 		if (rv->l) lil_list_append(rlist, rv);
 		else lil_free_value(rv);
 	}
@@ -2030,9 +2036,9 @@ static lil_value_t fnc_if(lil_t lil, size_t argc, lil_value_t* argv)
     v = lil_to_boolean(val);
     if (not) v = !v;
     if (v) {
-        r = lil_parse(lil, lil_to_string(argv[base + 1]), 0);
+        r = lil_parse_value(lil, argv[base + 1], 0);
     } else if (argc > (size_t)base + 2) {
-        r = lil_parse(lil, lil_to_string(argv[base + 2]), 0);
+        r = lil_parse_value(lil, argv[base + 2], 0);
     }
     lil_free_value(val);
     return r;
@@ -2058,7 +2064,7 @@ static lil_value_t fnc_while(lil_t lil, size_t argc, lil_value_t* argv)
             break;
         }
         if (r) lil_free_value(r);
-        r = lil_parse(lil, lil_to_string(argv[base + 1]), 0);
+        r = lil_parse_value(lil, argv[base + 1], 0);
         lil_free_value(val);
     }
     return r;
@@ -2068,7 +2074,7 @@ static lil_value_t fnc_for(lil_t lil, size_t argc, lil_value_t* argv)
 {
     lil_value_t val, r = NULL;
     if (argc < 4) return NULL;
-    lil_free_value(lil_parse(lil, lil_to_string(argv[0]), 0));
+    lil_free_value(lil_parse_value(lil, argv[0], 0));
     while (1) {
         val = lil_eval_expr(lil, argv[1]);
         if (!val) {
@@ -2080,9 +2086,9 @@ static lil_value_t fnc_for(lil_t lil, size_t argc, lil_value_t* argv)
             break;
         }
         if (r) lil_free_value(r);
-        r = lil_parse(lil, lil_to_string(argv[3]), 0);
+        r = lil_parse_value(lil, argv[3], 0);
         lil_free_value(val);
-        lil_free_value(lil_parse(lil, lil_to_string(argv[2]), 0));
+        lil_free_value(lil_parse_value(lil, argv[2], 0));
     }
     return r;
 }

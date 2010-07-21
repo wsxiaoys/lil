@@ -679,7 +679,7 @@ static void run_file(const char* filename)
     }
     lil = lil_new();
     register_cgi_functions(lil);
-    result = lil_parse(lil, code, 1);
+    result = lil_parse(lil, code, 0, 1);
     lil_free_value(result);
     fnc_gi_flush(lil, 0, NULL);
     lil_free(lil);
