@@ -28,6 +28,12 @@
 #include <math.h>
 #include "lil.h"
 
+#define ERROR_NOERROR 0
+#define ERROR_DEFAULT 1
+#define ERROR_FIXHEAD 2
+
+#define CALLBACKS 5
+
 /* note: static lil_xxx functions might become public later */
 
 struct _lil_value_t
@@ -75,6 +81,10 @@ struct _lil_t
 	lil_value_t empty;
 	int breakrun;
 	lil_value_t retval;
+	int error;
+	size_t err_head;
+	char* err_msg;
+	lil_callback_proc_t callback[CALLBACKS];
 };
 
 typedef struct _expreval_t
@@ -312,6 +322,7 @@ lil_var_t lil_set_var(lil_t lil, const char* name, lil_value_t val, int local)
 {
 	lil_var_t* nvar;
 	lil_env_t env = local == LIL_SETVAR_GLOBAL ? lil->rootenv : lil->env;
+	if (!name[0]) return NULL;
 	if (local != LIL_SETVAR_LOCAL_NEW) {
 		lil_var_t var = lil_find_var(lil, lil->env, name);
 		if (var) {
@@ -493,7 +504,7 @@ static lil_list_t substitute(lil_t lil)
 	lil_list_t words = lil_alloc_list();
 	
 	skip_spaces(lil);
-	while (lil->head < lil->clen && !ateol(lil)) {
+	while (lil->head < lil->clen && !ateol(lil) && !lil->error) {
 		lil_value_t w = alloc_value(NULL);
 		do {
 			size_t head = lil->head;
@@ -506,7 +517,7 @@ static lil_list_t substitute(lil_t lil)
 			}
 			lil_append_val(w, wp);
 			lil_free_value(wp);
-		} while (lil->head < lil->clen && !ateol(lil) && !isspace(lil->code[lil->head]));
+		} while (lil->head < lil->clen && !ateol(lil) && !isspace(lil->code[lil->head]) && !lil->error);
 		skip_spaces(lil);
 		
 		lil_list_append(words, w);
@@ -552,22 +563,32 @@ lil_value_t lil_parse(lil_t lil, const char* code, size_t codelen, int funclevel
 	lil->clen = codelen ? codelen : strlen(code);
 	lil->head = 0;
 	skip_spaces(lil);
-	while (lil->head < lil->clen) {
+	while (lil->head < lil->clen && !lil->error) {
 		if (words) lil_free_list(words);
 		if (val) lil_free_value(val);
 		val = NULL;
 
 		words = substitute(lil);
-		if (!words)	goto cleanup;
+		if (!words || lil->error) goto cleanup;
 		
 		if (words->c) {
 			lil_func_t cmd = find_cmd(lil, lil_to_string(words->v[0]));
 			if (!cmd) {
-				printf("unknown function %s\n", lil_to_string(words->v[0]));
+			    if (words->v[0]->l) {
+                    char* msg = malloc(words->v[0]->l + 32);
+                    sprintf(msg, "unknown function %s", words->v[0]->d);
+                    lil_set_error_at(lil, lil->head, msg);
+                    free(msg);
+			    }
 				goto cleanup;
 			}
 			if (cmd->proc) {
+			    size_t shead = lil->head;
 				val = cmd->proc(lil, words->c - 1, words->v + 1);
+				if (lil->error == ERROR_FIXHEAD) {
+				    lil->error = ERROR_DEFAULT;
+				    lil->err_head = shead;
+				}
 			} else {
 				lil_push_env(lil);
 				if (cmd->argnames->c == 1 && !strcmp(lil_to_string(cmd->argnames->v[0]), "args")) {
@@ -607,8 +628,41 @@ cleanup:
 
 lil_value_t lil_parse_value(lil_t lil, lil_value_t val, int funclevel)
 {
-    if (!val) return alloc_value(NULL);
+    if (!val || !val->d || !val->l) return alloc_value(NULL);
     return lil_parse(lil, val->d, val->l, funclevel);
+}
+
+void lil_callback(lil_t lil, int cb, lil_callback_proc_t proc)
+{
+    if (cb < 0 || cb > CALLBACKS) return;
+    lil->callback[cb] = proc;
+}
+
+void lil_set_error(lil_t lil, const char* msg)
+{
+    if (lil->error) return;
+    free(lil->err_msg);
+    lil->error = ERROR_FIXHEAD;
+    lil->err_head = 0;
+    lil->err_msg = strdup(msg);
+}
+
+void lil_set_error_at(lil_t lil, size_t pos, const char* msg)
+{
+    if (lil->error) return;
+    free(lil->err_msg);
+    lil->error = ERROR_DEFAULT;
+    lil->err_head = pos;
+    lil->err_msg = strdup(msg);
+}
+
+int lil_error(lil_t lil, const char** msg, size_t* pos)
+{
+    if (!lil->error) return 0;
+    *msg = lil->err_msg;
+    *pos = lil->err_head;
+    lil->error = ERROR_NOERROR;
+    return 1;
 }
 
 #define EE_INT 0
@@ -657,6 +711,7 @@ static void ee_element(expreval_t* ee)
         ee_numeric_element(ee);
         return;
     }
+
     /* for anything else that might creep in (usually from strings), we set the
      * value to 1 so that strings evaluate as "true" when used in conditional
      * expressions */
@@ -671,6 +726,7 @@ static void ee_paren(expreval_t* ee)
 		ee->head++;
 		ee_expr(ee);
 		if (ee->code[ee->head] == ')') ee->head++;
+		else ee->error = EERR_SYNTAX_ERROR;
 	} else ee_element(ee);
 }
 		
@@ -695,7 +751,7 @@ static void ee_unary(expreval_t* ee)
                 ee->ival = -ee->ival;
                 break;
             default:
-                ee->error = EERR_SYNTAX_ERROR;
+                ee->error = EERR_INVALID_TYPE;
             }
             break;
         case '+':
@@ -711,7 +767,7 @@ static void ee_unary(expreval_t* ee)
                 ee->ival = ~ee->ival;
                 break;
             default:
-                ee->error = EERR_SYNTAX_ERROR;
+                ee->error = EERR_INVALID_TYPE;
             }
             break;
         case '!':
@@ -723,7 +779,7 @@ static void ee_unary(expreval_t* ee)
                 ee->ival = !ee->ival;
                 break;
             default:
-                ee->error = EERR_SYNTAX_ERROR;
+                ee->error = EERR_INVALID_TYPE;
             }
             break;
         }
@@ -761,7 +817,7 @@ static void ee_muldiv(expreval_t* ee)
                     ee->type = EE_FLOAT;
                     break;
                 default:
-                    ee->error = EERR_SYNTAX_ERROR;
+                    ee->error = EERR_INVALID_TYPE;
                 }
                 break;
             case EE_INT:
@@ -777,11 +833,11 @@ static void ee_muldiv(expreval_t* ee)
                     ee->ival = ee->ival*oival;
                     break;
                 default:
-                    ee->error = EERR_SYNTAX_ERROR;
+                    ee->error = EERR_INVALID_TYPE;
                 }
                 break;
             default:
-                ee->error = EERR_SYNTAX_ERROR;
+                ee->error = EERR_INVALID_TYPE;
             }
             break;
         case '%':
@@ -807,7 +863,7 @@ static void ee_muldiv(expreval_t* ee)
                     ee->type = EE_FLOAT;
                     break;
                 default:
-                    ee->error = EERR_SYNTAX_ERROR;
+                    ee->error = EERR_INVALID_TYPE;
                 }
                 break;
             case EE_INT:
@@ -830,7 +886,7 @@ static void ee_muldiv(expreval_t* ee)
                     }
                     break;
                 default:
-                    ee->error = EERR_SYNTAX_ERROR;
+                    ee->error = EERR_INVALID_TYPE;
                 }
                 break;
             }
@@ -858,7 +914,7 @@ static void ee_muldiv(expreval_t* ee)
                     ee->type = EE_FLOAT;
                     break;
                 default:
-                    ee->error = EERR_SYNTAX_ERROR;
+                    ee->error = EERR_INVALID_TYPE;
                 }
                 break;
             case EE_INT:
@@ -882,7 +938,7 @@ static void ee_muldiv(expreval_t* ee)
                     ee->type = EE_FLOAT;
                     break;
                 default:
-                    ee->error = EERR_SYNTAX_ERROR;
+                    ee->error = EERR_INVALID_TYPE;
                 }
                 break;
             }
@@ -910,7 +966,7 @@ static void ee_muldiv(expreval_t* ee)
                     }
 	                break;
 	            default:
-                    ee->error = EERR_SYNTAX_ERROR;
+                    ee->error = EERR_INVALID_TYPE;
 	            }
 	            break;
             case EE_INT:
@@ -934,11 +990,11 @@ static void ee_muldiv(expreval_t* ee)
                     }
                     break;
                 default:
-                    ee->error = EERR_SYNTAX_ERROR;
+                    ee->error = EERR_INVALID_TYPE;
                 }
                 break;
             default:
-                ee->error = EERR_SYNTAX_ERROR;
+                ee->error = EERR_INVALID_TYPE;
 	        }
 	        break;
 	    }
@@ -971,7 +1027,7 @@ static void ee_addsub(expreval_t* ee)
                     ee->type = EE_FLOAT;
                     break;
                 default:
-                    ee->error = EERR_SYNTAX_ERROR;
+                    ee->error = EERR_INVALID_TYPE;
                 }
                 break;
             case EE_INT:
@@ -987,11 +1043,11 @@ static void ee_addsub(expreval_t* ee)
                     ee->ival = ee->ival+oival;
                     break;
                 default:
-                    ee->error = EERR_SYNTAX_ERROR;
+                    ee->error = EERR_INVALID_TYPE;
                 }
                 break;
             default:
-                ee->error = EERR_SYNTAX_ERROR;
+                ee->error = EERR_INVALID_TYPE;
             }
             break;
         case '-':
@@ -1009,7 +1065,7 @@ static void ee_addsub(expreval_t* ee)
                     ee->type = EE_FLOAT;
                     break;
                 default:
-                    ee->error = EERR_SYNTAX_ERROR;
+                    ee->error = EERR_INVALID_TYPE;
                 }
                 break;
             case EE_INT:
@@ -1025,11 +1081,11 @@ static void ee_addsub(expreval_t* ee)
                     ee->ival = oival-ee->ival;
                     break;
                 default:
-                    ee->error = EERR_SYNTAX_ERROR;
+                    ee->error = EERR_INVALID_TYPE;
                 }
                 break;
             default:
-                ee->error = EERR_SYNTAX_ERROR;
+                ee->error = EERR_INVALID_TYPE;
             }
             break;
         }
@@ -1063,7 +1119,7 @@ static void ee_shift(expreval_t* ee)
                     ee->ival = (int64_t)odval << ee->ival;
                     break;
                 default:
-                    ee->error = EERR_SYNTAX_ERROR;
+                    ee->error = EERR_INVALID_TYPE;
                 }
                 break;
             case EE_INT:
@@ -1079,11 +1135,11 @@ static void ee_shift(expreval_t* ee)
                     ee->ival = oival << ee->ival;
                     break;
                 default:
-                    ee->error = EERR_SYNTAX_ERROR;
+                    ee->error = EERR_INVALID_TYPE;
                 }
                 break;
             default:
-                ee->error = EERR_SYNTAX_ERROR;
+                ee->error = EERR_INVALID_TYPE;
             }
             break;
         case '>':
@@ -1101,7 +1157,7 @@ static void ee_shift(expreval_t* ee)
                     ee->ival = (int64_t)odval >> ee->ival;
                     break;
                 default:
-                    ee->error = EERR_SYNTAX_ERROR;
+                    ee->error = EERR_INVALID_TYPE;
                 }
                 break;
             case EE_INT:
@@ -1117,11 +1173,11 @@ static void ee_shift(expreval_t* ee)
                     ee->ival = oival >> ee->ival;
                     break;
                 default:
-                    ee->error = EERR_SYNTAX_ERROR;
+                    ee->error = EERR_INVALID_TYPE;
                 }
                 break;
             default:
-                ee->error = EERR_SYNTAX_ERROR;
+                ee->error = EERR_INVALID_TYPE;
             }
             break;
         }
@@ -1161,7 +1217,7 @@ static void ee_compare(expreval_t* ee)
                     ee->ival = (odval < ee->ival)?1:0;
                     break;
                 default:
-                    ee->error = EERR_SYNTAX_ERROR;
+                    ee->error = EERR_INVALID_TYPE;
                 }
                 break;
             case EE_INT:
@@ -1176,11 +1232,11 @@ static void ee_compare(expreval_t* ee)
                     ee->ival = (oival < ee->ival)?1:0;
                     break;
                 default:
-                    ee->error = EERR_SYNTAX_ERROR;
+                    ee->error = EERR_INVALID_TYPE;
                 }
                 break;
             default:
-                ee->error = EERR_SYNTAX_ERROR;
+                ee->error = EERR_INVALID_TYPE;
             }
             break;
         case 2:
@@ -1197,7 +1253,7 @@ static void ee_compare(expreval_t* ee)
                     ee->ival = (odval > ee->ival)?1:0;
                     break;
                 default:
-                    ee->error = EERR_SYNTAX_ERROR;
+                    ee->error = EERR_INVALID_TYPE;
                 }
                 break;
             case EE_INT:
@@ -1212,11 +1268,11 @@ static void ee_compare(expreval_t* ee)
                     ee->ival = (oival > ee->ival)?1:0;
                     break;
                 default:
-                    ee->error = EERR_SYNTAX_ERROR;
+                    ee->error = EERR_INVALID_TYPE;
                 }
                 break;
             default:
-                ee->error = EERR_SYNTAX_ERROR;
+                ee->error = EERR_INVALID_TYPE;
             }
             break;
         case 3:
@@ -1233,7 +1289,7 @@ static void ee_compare(expreval_t* ee)
                     ee->ival = (odval <= ee->ival)?1:0;
                     break;
                 default:
-                    ee->error = EERR_SYNTAX_ERROR;
+                    ee->error = EERR_INVALID_TYPE;
                 }
                 break;
             case EE_INT:
@@ -1248,11 +1304,11 @@ static void ee_compare(expreval_t* ee)
                     ee->ival = (oival <= ee->ival)?1:0;
                     break;
                 default:
-                    ee->error = EERR_SYNTAX_ERROR;
+                    ee->error = EERR_INVALID_TYPE;
                 }
                 break;
             default:
-                ee->error = EERR_SYNTAX_ERROR;
+                ee->error = EERR_INVALID_TYPE;
             }
             break;
         case 4:
@@ -1269,7 +1325,7 @@ static void ee_compare(expreval_t* ee)
                     ee->ival = (odval >= ee->ival)?1:0;
                     break;
                 default:
-                    ee->error = EERR_SYNTAX_ERROR;
+                    ee->error = EERR_INVALID_TYPE;
                 }
                 break;
             case EE_INT:
@@ -1284,11 +1340,11 @@ static void ee_compare(expreval_t* ee)
                     ee->ival = (oival >= ee->ival)?1:0;
                     break;
                 default:
-                    ee->error = EERR_SYNTAX_ERROR;
+                    ee->error = EERR_INVALID_TYPE;
                 }
                 break;
             default:
-                ee->error = EERR_SYNTAX_ERROR;
+                ee->error = EERR_INVALID_TYPE;
             }
             break;
         }
@@ -1322,7 +1378,7 @@ static void ee_equals(expreval_t* ee)
                     ee->ival = (odval == ee->ival)?1:0;
                     break;
                 default:
-                    ee->error = EERR_SYNTAX_ERROR;
+                    ee->error = EERR_INVALID_TYPE;
                 }
                 break;
             case EE_INT:
@@ -1337,11 +1393,11 @@ static void ee_equals(expreval_t* ee)
                     ee->ival = (oival == ee->ival)?1:0;
                     break;
                 default:
-                    ee->error = EERR_SYNTAX_ERROR;
+                    ee->error = EERR_INVALID_TYPE;
                 }
                 break;
             default:
-                ee->error = EERR_SYNTAX_ERROR;
+                ee->error = EERR_INVALID_TYPE;
             }
             break;
         case 2:
@@ -1358,7 +1414,7 @@ static void ee_equals(expreval_t* ee)
                     ee->ival = (odval != ee->ival)?1:0;
                     break;
                 default:
-                    ee->error = EERR_SYNTAX_ERROR;
+                    ee->error = EERR_INVALID_TYPE;
                 }
                 break;
             case EE_INT:
@@ -1373,11 +1429,11 @@ static void ee_equals(expreval_t* ee)
                     ee->ival = (oival != ee->ival)?1:0;
                     break;
                 default:
-                    ee->error = EERR_SYNTAX_ERROR;
+                    ee->error = EERR_INVALID_TYPE;
                 }
                 break;
             default:
-                ee->error = EERR_SYNTAX_ERROR;
+                ee->error = EERR_INVALID_TYPE;
             }
             break;
         }
@@ -1407,7 +1463,7 @@ static void ee_bitand(expreval_t* ee)
                 ee->ival = (int64_t)odval & ee->ival;
                 break;
             default:
-                ee->error = EERR_SYNTAX_ERROR;
+                ee->error = EERR_INVALID_TYPE;
             }
             break;
         case EE_INT:
@@ -1422,11 +1478,11 @@ static void ee_bitand(expreval_t* ee)
                 ee->ival = oival & ee->ival;
                 break;
             default:
-                ee->error = EERR_SYNTAX_ERROR;
+                ee->error = EERR_INVALID_TYPE;
             }
             break;
         default:
-            ee->error = EERR_SYNTAX_ERROR;
+            ee->error = EERR_INVALID_TYPE;
         }
     }
 }
@@ -1454,7 +1510,7 @@ static void ee_bitor(expreval_t* ee)
                 ee->ival = (int64_t)odval | ee->ival;
                 break;
             default:
-                ee->error = EERR_SYNTAX_ERROR;
+                ee->error = EERR_INVALID_TYPE;
             }
             break;
         case EE_INT:
@@ -1469,11 +1525,11 @@ static void ee_bitor(expreval_t* ee)
                 ee->ival = oival | ee->ival;
                 break;
             default:
-                ee->error = EERR_SYNTAX_ERROR;
+                ee->error = EERR_INVALID_TYPE;
             }
             break;
         default:
-            ee->error = EERR_SYNTAX_ERROR;
+            ee->error = EERR_INVALID_TYPE;
         }
     }
 }
@@ -1501,7 +1557,7 @@ static void ee_logand(expreval_t* ee)
                 ee->ival = (odval && ee->ival)?1:0;
                 break;
             default:
-                ee->error = EERR_SYNTAX_ERROR;
+                ee->error = EERR_INVALID_TYPE;
             }
             break;
         case EE_INT:
@@ -1516,11 +1572,11 @@ static void ee_logand(expreval_t* ee)
                 ee->ival = (oival && ee->ival)?1:0;
                 break;
             default:
-                ee->error = EERR_SYNTAX_ERROR;
+                ee->error = EERR_INVALID_TYPE;
             }
             break;
         default:
-            ee->error = EERR_SYNTAX_ERROR;
+            ee->error = EERR_INVALID_TYPE;
         }
     }
 }
@@ -1548,7 +1604,7 @@ static void ee_logor(expreval_t* ee)
                 ee->ival = (odval || ee->ival)?1:0;
                 break;
             default:
-                ee->error = EERR_SYNTAX_ERROR;
+                ee->error = EERR_INVALID_TYPE;
             }
             break;
         case EE_INT:
@@ -1563,11 +1619,11 @@ static void ee_logor(expreval_t* ee)
                 ee->ival = (oival || ee->ival)?1:0;
                 break;
             default:
-                ee->error = EERR_SYNTAX_ERROR;
+                ee->error = EERR_INVALID_TYPE;
             }
             break;
         default:
-            ee->error = EERR_SYNTAX_ERROR;
+            ee->error = EERR_INVALID_TYPE;
         }
     }
 }
@@ -1587,6 +1643,7 @@ lil_value_t lil_eval_expr(lil_t lil, lil_value_t code)
 {
 	expreval_t ee;
 	code = lil_subst_to_value(lil, code);
+	if (lil->error) return NULL;
 	ee.code = lil_to_string(code);
 	/* an empty expression equals to 0 so that it can be used as a false value
 	 * in conditionals */
@@ -1599,11 +1656,40 @@ lil_value_t lil_eval_expr(lil_t lil, lil_value_t code)
 	ee.error = 0;
 	ee_expr(&ee);
 	lil_free_value(code);
-	if (ee.error) return NULL;
+	if (ee.error) {
+	    switch (ee.error) {
+	    case EERR_DIVISION_BY_ZERO:
+            lil_set_error(lil, "division by zero in expression");
+            break;
+        case EERR_INVALID_TYPE:
+            lil_set_error(lil, "mixing invalid types in expression");
+            break;
+        case EERR_SYNTAX_ERROR:
+            lil_set_error(lil, "expression syntax error");
+            break;
+	    }
+	    return NULL;
+	}
 	if (ee.type == EE_INT)
 	    return lil_alloc_integer(ee.ival);
 	else
 	    return lil_alloc_double(ee.dval);
+}
+
+lil_value_t lil_unused_name(lil_t lil, const char* part)
+{
+    char* name = malloc(strlen(part) + 64);
+    lil_value_t val;
+    size_t i;
+    for (i=0; i<(size_t)-1; i++) {
+        sprintf(name, "$$un$%s$%09u$nu$$", part, (unsigned int)i);
+        if (find_cmd(lil, name)) continue;
+        if (lil_find_var(lil, lil->env, name)) continue;
+        val = lil_alloc_string(name);
+        free(name);
+        return val;
+    }
+    return NULL;
 }
 
 const char* lil_to_string(lil_value_t val)
@@ -1658,6 +1744,7 @@ lil_value_t lil_alloc_integer(int64_t num)
 void lil_free(lil_t lil)
 {
     size_t i;
+    free(lil->err_msg);
 	lil_free_value(lil->empty);
 	if (lil->retval) lil_free_value(lil->retval);
 	while (lil->env) {
@@ -1684,6 +1771,9 @@ static lil_value_t fnc_reflect(lil_t lil, size_t argc, lil_value_t* argv)
     lil_value_t r;
     if (!argc) return NULL;
     type = lil_to_string(argv[0]);
+    if (!strcmp(type, "version")) {
+        return lil_alloc_string(LIL_VERSION_STRING);
+    }
     if (!strcmp(type, "args")) {
         if (argc < 2) return NULL;
         func = find_cmd(lil, lil_to_string(argv[1]));
@@ -1755,17 +1845,36 @@ static lil_value_t fnc_reflect(lil_t lil, size_t argc, lil_value_t* argv)
             if (!strcmp(target, lil->rootenv->var[i]->n)) return lil_alloc_string("1");
         return NULL;
     }
+    if (!strcmp(type, "error")) {
+        return lil->err_msg ? lil_alloc_string(lil->err_msg) : NULL;
+    }
     return NULL;
 }
 
 static lil_value_t fnc_func(lil_t lil, size_t argc, lil_value_t* argv)
 {
+    lil_value_t name;
 	lil_func_t cmd;
-	if (argc != 3) return NULL;
-	cmd = add_func(lil, lil_to_string(argv[0]));
-	cmd->argnames = lil_subst_to_list(lil, argv[1]);
-	cmd->code = lil_clone_value(argv[2]);
-	return NULL;
+	if (argc < 1) return NULL;
+	if (argc == 3) {
+	    name = lil_clone_value(argv[0]);
+        cmd = add_func(lil, lil_to_string(argv[0]));
+        cmd->argnames = lil_subst_to_list(lil, argv[1]);
+        cmd->code = lil_clone_value(argv[2]);
+	} else {
+	    name = lil_unused_name(lil, "anonymous-function");
+	    cmd = add_func(lil, lil_to_string(name));
+	    if (argc < 2) {
+	        lil_value_t tmp = lil_alloc_string("args");
+	        cmd->argnames = lil_subst_to_list(lil, tmp);
+	        lil_free_value(tmp);
+            cmd->code = lil_clone_value(argv[0]);
+	    } else {
+            cmd->argnames = lil_subst_to_list(lil, argv[0]);
+            cmd->code = lil_clone_value(argv[1]);
+	    }
+	}
+	return name;
 }
 
 static lil_value_t fnc_quote(lil_t lil, size_t argc, lil_value_t* argv)
@@ -1802,17 +1911,25 @@ static lil_value_t fnc_set(lil_t lil, size_t argc, lil_value_t* argv)
 static lil_value_t fnc_write(lil_t lil, size_t argc, lil_value_t* argv)
 {
 	size_t i;
+	lil_value_t msg = lil_alloc_string(NULL);
 	for (i=0; i<argc; i++) {
-		if (i) printf(" ");
-		printf("%s", lil_to_string(argv[i]));
+		if (i) lil_append_char(msg, ' ');
+		lil_append_val(msg, argv[i]);
 	}
-	return NULL;
+	if (lil->callback[LIL_CALLBACK_WRITE]) {
+	    lil_write_callback_proc_t proc = (lil_write_callback_proc_t)lil->callback[LIL_CALLBACK_WRITE];
+	    proc(lil, lil_to_string(msg));
+	} else printf("%s", lil_to_string(msg));
+	return msg;
 }
 
 static lil_value_t fnc_print(lil_t lil, size_t argc, lil_value_t* argv)
 {
 	lil_value_t r = fnc_write(lil, argc, argv);
-	printf("\n");
+	if (lil->callback[LIL_CALLBACK_WRITE]) {
+        lil_write_callback_proc_t proc = (lil_write_callback_proc_t)lil->callback[LIL_CALLBACK_WRITE];
+        proc(lil, "\n");
+    } else printf("\n");
 	return r;
 }
 
@@ -1864,16 +1981,23 @@ static lil_value_t fnc_append(lil_t lil, size_t argc, lil_value_t* argv)
 {
     lil_list_t list;
     lil_value_t r;
-    size_t i;
+    size_t i, base = 1;
+    int access = LIL_SETVAR_LOCAL;
     const char* varname;
     if (argc < 2) return NULL;
     varname = lil_to_string(argv[0]);
+    if (!strcmp(varname, "global")) {
+        if (argc < 3) return NULL;
+        varname = lil_to_string(argv[1]);
+        base = 2;
+        access = LIL_SETVAR_GLOBAL;
+    }
     list = lil_subst_to_list(lil, lil_get_var(lil, varname));
-    for (i=1; i<argc; i++)
+    for (i=base; i<argc; i++)
         lil_list_append(list, lil_clone_value(argv[i]));
     r = lil_list_to_value(list, 1);
     lil_free_list(list);
-    lil_set_var(lil, varname, r, LIL_SETVAR_LOCAL);
+    lil_set_var(lil, varname, r, access);
     return r;
 }
 
@@ -1929,9 +2053,10 @@ static lil_value_t fnc_foreach(lil_t lil, size_t argc, lil_value_t* argv)
 	for (i=0; i<list->c; i++) {
 		lil_value_t rv;
 		lil_set_var(lil, varname, list->v[i], LIL_SETVAR_LOCAL);
-		rv = lil_parse_value(lil, argv[codeidx], 1);
+		rv = lil_parse_value(lil, argv[codeidx], 0);
 		if (rv->l) lil_list_append(rlist, rv);
 		else lil_free_value(rv);
+		if (lil->error) break;
 	}
 	r = lil_list_to_value(rlist, 1);
 	lil_free_list(list);
@@ -1994,15 +2119,20 @@ static lil_value_t fnc_read(lil_t lil, size_t argc, lil_value_t* argv)
     char* buffer;
     lil_value_t r;
     if (argc < 1) return NULL;
-    f = fopen(lil_to_string(argv[0]), "rb");
-    if (!f) return NULL;
-    fseek(f, 0, SEEK_END);
-    size = ftell(f);
-    fseek(f, 0, SEEK_SET);
-    buffer = malloc(size + 1);
-    fread(buffer, 1, size, f);
-    buffer[size] = 0;
-    fclose(f);
+    if (lil->callback[LIL_CALLBACK_READ]) {
+        lil_read_callback_proc_t proc = (lil_read_callback_proc_t) lil->callback[LIL_CALLBACK_READ];
+        buffer = proc(lil, lil_to_string(argv[0]));
+    } else {
+        f = fopen(lil_to_string(argv[0]), "rb");
+        if (!f) return NULL;
+        fseek(f, 0, SEEK_END);
+        size = ftell(f);
+        fseek(f, 0, SEEK_SET);
+        buffer = malloc(size + 1);
+        fread(buffer, 1, size, f);
+        buffer[size] = 0;
+        fclose(f);
+    }
     r = lil_alloc_string(buffer);
     free(buffer);
     return r;
@@ -2013,12 +2143,17 @@ static lil_value_t fnc_store(lil_t lil, size_t argc, lil_value_t* argv)
     FILE* f;
     const char* buffer;
     if (argc < 2) return NULL;
-    f = fopen(lil_to_string(argv[0]), "wb");
-    if (!f) return NULL;
-    buffer = lil_to_string(argv[1]);
-    fwrite(buffer, 1, strlen(buffer), f);
-    fclose(f);
-    return lil_clone_value(argv[0]);
+    if (lil->callback[LIL_CALLBACK_STORE]) {
+        lil_store_callback_proc_t proc = (lil_store_callback_proc_t)lil->callback[LIL_CALLBACK_STORE];
+        proc(lil, lil_to_string(argv[0]), lil_to_string(argv[1]));
+    } else {
+        f = fopen(lil_to_string(argv[0]), "wb");
+        if (!f) return NULL;
+        buffer = lil_to_string(argv[1]);
+        fwrite(buffer, 1, strlen(buffer), f);
+        fclose(f);
+    }
+    return lil_clone_value(argv[1]);
 }
 
 static lil_value_t fnc_if(lil_t lil, size_t argc, lil_value_t* argv)
@@ -2029,10 +2164,7 @@ static lil_value_t fnc_if(lil_t lil, size_t argc, lil_value_t* argv)
     if (!strcmp(lil_to_string(argv[0]), "not")) base = not = 1;
     if (argc < (size_t)base + 2) return NULL;
     val = lil_eval_expr(lil, argv[base]);
-    if (!val) {
-        printf("expression error - '%s'\n", lil_to_string(argv[base]));
-        return NULL;
-    }
+    if (!val || lil->error) return NULL;
     v = lil_to_boolean(val);
     if (not) v = !v;
     if (v) {
@@ -2051,12 +2183,9 @@ static lil_value_t fnc_while(lil_t lil, size_t argc, lil_value_t* argv)
     if (argc < 1) return NULL;
     if (!strcmp(lil_to_string(argv[0]), "not")) base = not = 1;
     if (argc < (size_t)base + 2) return NULL;
-    while (1) {
+    while (!lil->error) {
         val = lil_eval_expr(lil, argv[base]);
-        if (!val) {
-            printf("expression error - '%s'\n", lil_to_string(argv[base]));
-            return NULL;
-        }
+        if (!val || lil->error) return NULL;
         v = lil_to_boolean(val);
         if (not) v = !v;
         if (!v) {
@@ -2075,12 +2204,9 @@ static lil_value_t fnc_for(lil_t lil, size_t argc, lil_value_t* argv)
     lil_value_t val, r = NULL;
     if (argc < 4) return NULL;
     lil_free_value(lil_parse_value(lil, argv[0], 0));
-    while (1) {
+    while (!lil->error) {
         val = lil_eval_expr(lil, argv[1]);
-        if (!val) {
-            printf("expression error - '%s'\n", lil_to_string(argv[1]));
-            return NULL;
-        }
+        if (!val || lil->error) return NULL;
         if (!lil_to_boolean(val)) {
             lil_free_value(val);
             break;
@@ -2175,6 +2301,42 @@ static lil_value_t fnc_streq(lil_t lil, size_t argc, lil_value_t* argv)
     return lil_alloc_integer(strcmp(lil_to_string(argv[0]), lil_to_string(argv[1]))?0:1);
 }
 
+static lil_value_t fnc_repstr(lil_t lil, size_t argc, lil_value_t* argv)
+{
+    const char* from;
+    const char* to;
+    char* src;
+    const char* sub;
+    size_t idx;
+    size_t fromlen;
+    size_t tolen;
+    size_t srclen;
+    lil_value_t r;
+    if (argc < 1) return NULL;
+    if (argc < 3) return lil_clone_value(argv[0]);
+    from = lil_to_string(argv[1]);
+    to = lil_to_string(argv[2]);
+    if (!from[0]) return NULL;
+    src = strdup(lil_to_string(argv[0]));
+    srclen = strlen(src);
+    fromlen = strlen(from);
+    tolen = strlen(to);
+    while ((sub = strstr(src, from))) {
+        char* newsrc = malloc(srclen - fromlen + tolen + 1);
+        idx = sub - src;
+        if (idx) memcpy(newsrc, src, idx);
+        memcpy(newsrc + idx, to, tolen);
+        memcpy(newsrc + idx + tolen, src + idx + fromlen, srclen - idx - fromlen);
+        srclen = srclen - fromlen + tolen;
+        free(src);
+        src = newsrc;
+        src[srclen] = 0;
+    }
+    r = lil_alloc_string(src);
+    free(src);
+    return r;
+}
+
 static lil_value_t fnc_split(lil_t lil, size_t argc, lil_value_t* argv)
 {
     lil_list_t list;
@@ -2202,6 +2364,82 @@ static lil_value_t fnc_split(lil_t lil, size_t argc, lil_value_t* argv)
     val = lil_list_to_value(list, 1);
     lil_free_list(list);
     return val;
+}
+
+static lil_value_t fnc_try(lil_t lil, size_t argc, lil_value_t* argv)
+{
+    lil_value_t r;
+    if (argc < 1) return NULL;
+    if (lil->error) return NULL;
+    r = lil_parse_value(lil, argv[0], 0);
+    if (lil->error) {
+        lil->error = ERROR_NOERROR;
+        lil_free_value(r);
+        if (argc > 1) r = lil_parse_value(lil, argv[1], 0);
+        else r = 0;
+    }
+    return r;
+}
+
+static lil_value_t fnc_error(lil_t lil, size_t argc, lil_value_t* argv)
+{
+    lil_set_error(lil, argc > 0 ? lil_to_string(argv[0]) : NULL);
+    return NULL;
+}
+
+static lil_value_t fnc_exit(lil_t lil, size_t argc, lil_value_t* argv)
+{
+    if (lil->callback[LIL_CALLBACK_EXIT]) {
+        lil_exit_callback_proc_t proc = (lil_exit_callback_proc_t)lil->callback[LIL_CALLBACK_EXIT];
+        proc(lil, argc > 0 ? argv[0] : NULL);
+    }
+    return NULL;
+}
+
+static lil_value_t fnc_source(lil_t lil, size_t argc, lil_value_t* argv)
+{
+    FILE* f;
+    size_t size;
+    char* buffer;
+    lil_value_t r;
+    if (argc < 1) return NULL;
+    if (lil->callback[LIL_CALLBACK_SOURCE]) {
+        lil_source_callback_proc_t proc = (lil_source_callback_proc_t)lil->callback[LIL_CALLBACK_SOURCE];
+        buffer = proc(lil, lil_to_string(argv[0]));
+    } else if (lil->callback[LIL_CALLBACK_READ]) {
+        lil_read_callback_proc_t proc = (lil_read_callback_proc_t)lil->callback[LIL_CALLBACK_READ];
+        buffer = proc(lil, lil_to_string(argv[0]));
+    } else {
+        f = fopen(lil_to_string(argv[0]), "rb");
+        if (!f) return NULL;
+        fseek(f, 0, SEEK_END);
+        size = ftell(f);
+        fseek(f, 0, SEEK_SET);
+        buffer = malloc(size + 1);
+        fread(buffer, 1, size, f);
+        buffer[size] = 0;
+        fclose(f);
+    }
+    r = lil_parse(lil, buffer, 0, 0);
+    free(buffer);
+    return r;
+}
+
+static lil_value_t fnc_lmap(lil_t lil, size_t argc, lil_value_t* argv)
+{
+    lil_list_t list;
+    size_t i;
+    if (argc < 2) return NULL;
+    list = lil_subst_to_list(lil, argv[0]);
+    for (i=1; i<argc; i++)
+        lil_set_var(lil, lil_to_string(argv[i]), lil_list_get(list, i - 1), LIL_SETVAR_LOCAL);
+    lil_free_list(list);
+    return NULL;
+}
+
+static lil_value_t fnc_rand(lil_t lil, size_t argc, lil_value_t* argv)
+{
+    return lil_alloc_double(rand()/(double)RAND_MAX);
 }
 
 static void register_stdcmds(lil_t lil)
@@ -2236,5 +2474,12 @@ static void register_stdcmds(lil_t lil)
     lil_register(lil, "length", fnc_length);
     lil_register(lil, "strcmp", fnc_strcmp);
     lil_register(lil, "streq", fnc_streq);
+    lil_register(lil, "repstr", fnc_repstr);
     lil_register(lil, "split", fnc_split);
+    lil_register(lil, "try", fnc_try);
+    lil_register(lil, "error", fnc_error);
+    lil_register(lil, "exit", fnc_exit);
+    lil_register(lil, "source", fnc_source);
+    lil_register(lil, "lmap", fnc_lmap);
+    lil_register(lil, "rand", fnc_rand);
 }

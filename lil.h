@@ -26,9 +26,17 @@
 
 #include <stdint.h>
 
+#define LIL_VERSION_STRING "0.1"
+
 #define LIL_SETVAR_GLOBAL 0
 #define LIL_SETVAR_LOCAL 1
 #define LIL_SETVAR_LOCAL_NEW 2
+
+#define LIL_CALLBACK_EXIT 0
+#define LIL_CALLBACK_WRITE 1
+#define LIL_CALLBACK_READ 2
+#define LIL_CALLBACK_STORE 3
+#define LIL_CALLBACK_SOURCE 4
 
 typedef struct _lil_value_t* lil_value_t;
 typedef struct _lil_func_t* lil_func_t;
@@ -37,6 +45,12 @@ typedef struct _lil_env_t* lil_env_t;
 typedef struct _lil_list_t* lil_list_t;
 typedef struct _lil_t* lil_t;
 typedef lil_value_t (*lil_func_proc_t)(lil_t lil, size_t argc, lil_value_t* argv);
+typedef void (*lil_exit_callback_proc_t)(lil_t lil, lil_value_t arg);
+typedef void (*lil_write_callback_proc_t)(lil_t lil, const char* msg);
+typedef char* (*lil_read_callback_proc_t)(lil_t lil, const char* name);
+typedef char* (*lil_source_callback_proc_t)(lil_t lil, const char* name);
+typedef void (*lil_store_callback_proc_t)(lil_t lil, const char* name, const char* data);
+typedef void (*lil_callback_proc_t)(void);
 
 lil_t lil_new(void);
 void lil_free(lil_t lil);
@@ -45,6 +59,12 @@ int lil_register(lil_t lil, const char* name, lil_func_proc_t proc);
 
 lil_value_t lil_parse(lil_t lil, const char* code, size_t codelen, int funclevel);
 lil_value_t lil_parse_value(lil_t lil, lil_value_t val, int funclevel);
+
+void lil_callback(lil_t lil, int cb, lil_callback_proc_t proc);
+
+void lil_set_error(lil_t lil, const char* msg);
+void lil_set_error_at(lil_t lil, size_t pos, const char* msg);
+int lil_error(lil_t lil, const char** msg, size_t* pos);
 
 const char* lil_to_string(lil_value_t val);
 double lil_to_double(lil_value_t val);
@@ -80,5 +100,6 @@ lil_var_t lil_set_var(lil_t lil, const char* name, lil_value_t val, int local);
 lil_value_t lil_get_var(lil_t lil, const char* name);
 
 lil_value_t lil_eval_expr(lil_t lil, lil_value_t code);
+lil_value_t lil_unused_name(lil_t lil, const char* part);
 
 #endif
