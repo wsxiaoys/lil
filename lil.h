@@ -37,6 +37,7 @@
 #define LIL_CALLBACK_READ 2
 #define LIL_CALLBACK_STORE 3
 #define LIL_CALLBACK_SOURCE 4
+#define LIL_CALLBACK_ERROR 5
 
 typedef struct _lil_value_t* lil_value_t;
 typedef struct _lil_func_t* lil_func_t;
@@ -50,6 +51,7 @@ typedef void (*lil_write_callback_proc_t)(lil_t lil, const char* msg);
 typedef char* (*lil_read_callback_proc_t)(lil_t lil, const char* name);
 typedef char* (*lil_source_callback_proc_t)(lil_t lil, const char* name);
 typedef void (*lil_store_callback_proc_t)(lil_t lil, const char* name, const char* data);
+typedef void (*lil_error_callback_proc_t)(lil_t lil, size_t pos, const char* msg);
 typedef void (*lil_callback_proc_t)(void);
 
 lil_t lil_new(void);

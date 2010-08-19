@@ -32,7 +32,7 @@
 #define ERROR_DEFAULT 1
 #define ERROR_FIXHEAD 2
 
-#define CALLBACKS 5
+#define CALLBACKS 6
 
 /* note: static lil_xxx functions might become public later */
 
@@ -85,6 +85,7 @@ struct _lil_t
 	size_t err_head;
 	char* err_msg;
 	lil_callback_proc_t callback[CALLBACKS];
+	size_t parse_depth;
 };
 
 typedef struct _expreval_t
@@ -563,6 +564,7 @@ lil_value_t lil_parse(lil_t lil, const char* code, size_t codelen, int funclevel
 	lil->clen = codelen ? codelen : strlen(code);
 	lil->head = 0;
 	skip_spaces(lil);
+	lil->parse_depth++;
 	while (lil->head < lil->clen && !lil->error) {
 		if (words) lil_free_list(words);
 		if (val) lil_free_value(val);
@@ -613,6 +615,10 @@ lil_value_t lil_parse(lil_t lil, const char* code, size_t codelen, int funclevel
 		skip_spaces(lil);
 	}
 cleanup:
+    if (lil->error && lil->callback[LIL_CALLBACK_ERROR] && lil->parse_depth == 1) {
+        lil_error_callback_proc_t proc = (lil_error_callback_proc_t)lil->callback[LIL_CALLBACK_ERROR];
+        proc(lil, lil->err_head, lil->err_msg);
+    }
 	if (words) lil_free_list(words);
 	lil->code = save_code;
 	lil->clen = save_clen;
@@ -623,6 +629,7 @@ cleanup:
         lil->retval = NULL;
         lil->breakrun = 0;
 	}
+	lil->parse_depth--;
 	return val ? val : alloc_value(NULL);
 }
 
