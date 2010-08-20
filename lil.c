@@ -565,6 +565,7 @@ lil_value_t lil_parse(lil_t lil, const char* code, size_t codelen, int funclevel
 	lil->head = 0;
 	skip_spaces(lil);
 	lil->parse_depth++;
+	if (lil->parse_depth == 1) lil->error = 0;
 	while (lil->head < lil->clen && !lil->error) {
 		if (words) lil_free_list(words);
 		if (val) lil_free_value(val);
