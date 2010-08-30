@@ -7,8 +7,8 @@ LIL_PROGRAM = lil
 LIL_LIBRARY = liblil.a
 BININSTALL = $(PREFIX)/bin
 MANINSTALL = $(PREFIX)/man/man1
-CFLAGS = -g3 -std=c99 -pedantic -Wall -Wextra -Wno-long-long -Wno-unused-parameter
-LDFLAGS = -g -L.
+CFLAGS ?= -g3 -std=c99 -pedantic -Wall -Wextra -Wno-long-long -Wno-unused-parameter
+LDFLAGS ?= -g -L.
 
 LIL_SOURCES = lil.c
 LIL_PROGRAM_SOURCES = main.c
