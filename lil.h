@@ -100,6 +100,7 @@ void lil_pop_env(lil_t lil);
 
 lil_var_t lil_set_var(lil_t lil, const char* name, lil_value_t val, int local);
 lil_value_t lil_get_var(lil_t lil, const char* name);
+lil_value_t lil_get_var_or(lil_t lil, const char* name, lil_value_t defvalue);
 
 lil_value_t lil_eval_expr(lil_t lil, lil_value_t code);
 lil_value_t lil_unused_name(lil_t lil, const char* part);

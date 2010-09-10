@@ -351,6 +351,12 @@ lil_value_t lil_get_var(lil_t lil, const char* name)
 	return var ? var->v : lil->empty;
 }
 
+lil_value_t lil_get_var_or(lil_t lil, const char* name, lil_value_t defvalue)
+{
+    lil_var_t var = lil_find_var(lil, lil->env, name);
+    return var ? var->v : defvalue;
+}
+
 lil_env_t lil_push_env(lil_t lil)
 {
 	lil_env_t env = lil_alloc_env(lil->env);
@@ -652,7 +658,7 @@ void lil_set_error(lil_t lil, const char* msg)
     free(lil->err_msg);
     lil->error = ERROR_FIXHEAD;
     lil->err_head = 0;
-    lil->err_msg = strdup(msg);
+    lil->err_msg = strdup(msg ? msg : "");
 }
 
 void lil_set_error_at(lil_t lil, size_t pos, const char* msg)
@@ -661,7 +667,7 @@ void lil_set_error_at(lil_t lil, size_t pos, const char* msg)
     free(lil->err_msg);
     lil->error = ERROR_DEFAULT;
     lil->err_head = pos;
-    lil->err_msg = strdup(msg);
+    lil->err_msg = strdup(msg ? msg : "");
 }
 
 int lil_error(lil_t lil, const char** msg, size_t* pos)
