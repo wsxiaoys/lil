@@ -80,7 +80,7 @@ static int nonint(int argc, const char* argv[])
     lil_set_var(lil, "argv", args, LIL_SETVAR_GLOBAL);
     lil_free_value(args);
     tmpcode = malloc(strlen(filename) + 256);
-    sprintf(tmpcode, "[func {c} {if [streq $c ''] {print There is no code in the file or the file does not exist} {[eval $c]}}] [read {%s}]", filename);
+    sprintf(tmpcode, "set __lilmain:code__ [read {%s}]\nif [streq $__lilmain:code__ ''] {print There is no code in the file or the file does not exist} {eval $__lilmain:code__}\n", filename);
     result = lil_parse(lil, tmpcode, 0, 1);
     free(tmpcode);
     lil_free_value(result);

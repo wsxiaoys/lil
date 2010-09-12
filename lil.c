@@ -32,7 +32,7 @@
 #define ERROR_DEFAULT 1
 #define ERROR_FIXHEAD 2
 
-#define CALLBACKS 6
+#define CALLBACKS 8
 
 /* note: static lil_xxx functions might become public later */
 
@@ -45,6 +45,7 @@ struct _lil_value_t
 struct _lil_var_t
 {
 	char* n;
+    struct _lil_env_t* env;
 	lil_value_t v;
 };
 
@@ -323,13 +324,24 @@ lil_var_t lil_set_var(lil_t lil, const char* name, lil_value_t val, int local)
 {
 	lil_var_t* nvar;
 	lil_env_t env = local == LIL_SETVAR_GLOBAL ? lil->rootenv : lil->env;
+    int freeval = 0;
 	if (!name[0]) return NULL;
-	if (local != LIL_SETVAR_LOCAL_NEW) {
-		lil_var_t var = lil_find_var(lil, lil->env, name);
-		if (var) {
+    if (local != LIL_SETVAR_LOCAL_NEW) {
+        lil_var_t var = lil_find_var(lil, lil->env, name);
+        if (((!var && env == lil->rootenv) || (var && var->env == lil->rootenv)) && lil->callback[LIL_CALLBACK_SETVAR]) {
+            lil_setvar_callback_proc_t proc = (lil_setvar_callback_proc_t)lil->callback[LIL_CALLBACK_SETVAR];
+            lil_value_t newval = val;
+            int r = proc(lil, name, &newval);
+            if (r < 0) return NULL;
+            if (r) {
+                val = newval;
+                freeval = 1;
+            }
+        }
+        if (var) {
 			lil_free_value(var->v);
-			var->v = lil_clone_value(val);
-			return var;
+            var->v = freeval ? val : lil_clone_value(val);
+            return var;
 		}
 	}
 
@@ -341,20 +353,27 @@ lil_var_t lil_set_var(lil_t lil, const char* name, lil_value_t val, int local)
 	env->var = nvar;
 	nvar[env->vars] = calloc(1, sizeof(struct _lil_var_t));
 	nvar[env->vars]->n = strclone(name);
-	nvar[env->vars]->v = lil_clone_value(val);
+    nvar[env->vars]->env = env;
+    nvar[env->vars]->v = freeval ? val : lil_clone_value(val);
 	return nvar[env->vars++];
 }
 
 lil_value_t lil_get_var(lil_t lil, const char* name)
 {
-	lil_var_t var = lil_find_var(lil, lil->env, name);
-	return var ? var->v : lil->empty;
+    return lil_get_var_or(lil, name, lil->empty);
 }
 
 lil_value_t lil_get_var_or(lil_t lil, const char* name, lil_value_t defvalue)
 {
     lil_var_t var = lil_find_var(lil, lil->env, name);
-    return var ? var->v : defvalue;
+    lil_value_t retval = var ? var->v : defvalue;
+    if (lil->callback[LIL_CALLBACK_GETVAR] && (!var || var->env == lil->rootenv)) {
+        lil_getvar_callback_proc_t proc = (lil_getvar_callback_proc_t)lil->callback[LIL_CALLBACK_GETVAR];
+        lil_value_t newretval = retval;
+        if (proc(lil, name, &newretval))
+            retval = newretval;
+    }
+    return retval;
 }
 
 lil_env_t lil_push_env(lil_t lil)
@@ -602,7 +621,7 @@ lil_value_t lil_parse(lil_t lil, const char* code, size_t codelen, int funclevel
 				lil_push_env(lil);
 				if (cmd->argnames->c == 1 && !strcmp(lil_to_string(cmd->argnames->v[0]), "args")) {
 				    lil_value_t args = lil_list_to_value(words, 1);
-				    lil_set_var(lil, "args", args, LIL_SETVAR_LOCAL_NEW);
+                    lil_set_var(lil, "args", args, LIL_SETVAR_LOCAL_NEW);
 				    lil_free_value(args);
 				} else {
 	                size_t i;
@@ -1919,7 +1938,7 @@ static lil_value_t fnc_set(lil_t lil, size_t argc, lil_value_t* argv)
 		var = lil_set_var(lil, lil_to_string(argv[i]), argv[i + 1], access);
 		i += 2;
 	}
-	return lil_clone_value(var->v);
+    return var ? lil_clone_value(var->v) : NULL;
 }
 
 static lil_value_t fnc_write(lil_t lil, size_t argc, lil_value_t* argv)
