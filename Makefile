@@ -20,19 +20,17 @@ HEADERS = $(wildcard *.h)
 
 .PHONY: all
 all: $(LIL_LIBRARY) $(LIL_PROGRAM)
-	$(MAKE) -C lilcgi
 
 $(LIL_LIBRARY): $(LIL_OBJECTS)
 	$(AR) rcs $(LIL_LIBRARY) $(LIL_OBJECTS)
 
 $(LIL_PROGRAM): $(LIL_PROGRAM_OBJECTS) $(LIL_LIBRARY)
-	$(CC) $(LDFLAGS) -o $(LIL_PROGRAM) $(LIL_PROGRAM_OBJECTS) -llil
+	$(CC) $(LDFLAGS) -o $(LIL_PROGRAM) $(LIL_PROGRAM_OBJECTS) -llil -lm
 
 $(LIL_PROGRAM_OBJECTS) $(LIL_OBJECTS): %.o: %.c $(HEADERS)
 	$(CC) -c $(CFLAGS) $< -o $@
 
 .PHONY: clean
 clean:
-	$(MAKE) -C lilcgi clean
 	$(RM) -f $(LIL_PROGRAM_OBJECTS) $(LIL_OBJECTS)
 	$(RM) -f $(LIL_LIBRARY) $(LIL_PROGRAM) $(LILCGI_PROGRAM)
