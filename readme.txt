@@ -46,6 +46,14 @@ LIL: A Little Interpreted Language
  
  It has not been tested under Microsoft Visual C++ but it should compile if
  the stdint.h file mentioned above is used.
+ 
+ As a side note, LIL has nothing to do with the "Little Implementation
+ Language" for PDP (which i learned about months after i chose the name
+ LIL for my library). Apparently that LIL was made during the same time as
+ the UNIX system and the C language by P.J. Plauger. If you are interested
+ in this historical language you can read about it here:
+ 
+     http://www.ultimate.com/phil/lil/
 
 
 2. LIL syntax
