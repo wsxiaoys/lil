@@ -414,6 +414,12 @@ LIL: A Little Interpreted Language
      eval [...]
        combines the arguments to a single string and evaluates it as LIL
        code. The function returns the result of the LIL code
+       
+     jaileval ["clean"] <code>
+       the <code> will be executed in its own LIL environment. Unless
+       "clean" is specified, the new LIL environment will get a copy of the
+       currently registered native functions. The <code> can use "return" to
+       return a value (which is returned by jaileval)
      
      count <list>
        returns the number of items in a LIL list
