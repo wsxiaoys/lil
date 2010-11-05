@@ -126,6 +126,28 @@ LIL: A Little Interpreted Language
  
  will not because \" will be converted to ".
  
+   Quotted strings can contain escape characters. These are characters
+ which you either can't use or special characters you can't (or don't want)
+ to type in the code.  As shown above, an escaped character starts with
+ the \ character (the "escape character") and followed by another character
+ which defines which character will be inserted at that point.  The escape
+ characters LIL recognizes as special characters are
+ 
+     b - inserts the backspace character
+     t - inserts the horizontal tab character
+     n - inserts the newline character
+     v - inserts the vertical tab character
+     f - inserts the formfeed character
+     r - inserts the carriage return character
+     a - inserts the bell character
+ 
+ any other character will be included as-is without the \ character.  For
+ example the string "hello\nworld" will insert a newline character between
+ "hello" and "world".  The string "is this good\?" will be equal to the
+ string "is this good?" and the string "hello \[world\]" will be equal
+ to "hello [world]" (however LIL will not try to evaluate "world" as a
+ command - see below).
+ 
    As mentioned above, square braces are used to replace (substitute) the
  command inside them with the result of that command.  In LIL this is used
  to access the result of a function.  As an example consider mathematical
@@ -191,10 +213,10 @@ LIL: A Little Interpreted Language
      print $name
  
  Note two important things however: first, the name of the variable is NOT
- "$name". It is "name". The dollar is used as a shortcut for "$". And
- second, it *really* is a shortcut: the "set" function will be called even
- if you don't type it (so if you override it, the overridden function will
- be called).
+ "$name".  It is "name". The dollar is used as a shortcut for "[set name]".
+ And second, it *really* is a shortcut: the "set" function will be called
+ even if you don't type it (so if you override it, the overridden function
+ will be called).
  
    Remember the part about curly brackets above? Well, if you type
    
@@ -337,6 +359,20 @@ LIL: A Little Interpreted Language
  is made up of two words again: "print" and "is it six?".  This happens
  because the "is it ", [expr 3 + 2] and ? parts are combined together and
  not separated by a space.
+ 
+   LIL commands are separated by newlines (each command takes a whole line)
+ or the ; character. For example, for LIL the code
+ 
+     print hello ; print world
+ 
+ is the same as
+ 
+     print hello
+     print world
+     
+   Finally you can put comments in the code using the # character.  Any
+ characters after # until the end of the line will be ignored by the LIL
+ interpreter.
 
 
    For more information and details on LIL's syntax, check the .lil example
