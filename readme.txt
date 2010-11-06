@@ -28,24 +28,24 @@ LIL: A Little Interpreted Language
  
    The source code of LIL consists of a pair of .c and .h files (lil.c and
  lil.h) of ANSI C90 with some extensions from C99 (mostly the use of
- stdint.h) which most modern compilers provide (users of Microsoft's C/C++
- compilers can obtain a public domain stdint.h implementation for their
- compiler from http://msinttypes.googlecode.com/svn/trunk/stdint.h).  The
- code has been tested to compile and work with the following compilers:
+ stdint.h) which most modern compilers provide. The code has been tested to
+ compile and work with the following compilers:
  
      * GNU C/C++ Compiler 3.x
      * OpenWatcom C/C++ Compiler 1.9
      * LLVM Clang
      * Digital Mars C/C++ Compiler 8.42n
      * Tiny C Compiler 0.9.25
+     * Microsoft Visual C++ 2010 Express (see below for older versions)
  
  It has been tested to not compile under the following compilers:
  
      * Borland's free C/C++ Compiler 5.5.1
        (missing stdint.h, atoll, should compile with modifications)
  
- It has not been tested under Microsoft Visual C++ but it should compile if
- the stdint.h file mentioned above is used.
+ Users of older versions of Microsoft Visual C++ need to use a stdint.h
+ file provided by external sources. A commonly used one stdint.h file for
+ MSVC is http://msinttypes.googlecode.com/svn/trunk/stdint.h 
  
  As a side note, LIL has nothing to do with the "Little Implementation
  Language" for PDP (which i learned about months after i chose the name
