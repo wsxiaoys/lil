@@ -28,6 +28,11 @@
 #include <math.h>
 #include "lil.h"
 
+/* Visual C++ does not have atoll */
+#ifdef _MSC_VER
+#define atoll _atoi64
+#endif
+
 #define ERROR_NOERROR 0
 #define ERROR_DEFAULT 1
 #define ERROR_FIXHEAD 2
