@@ -1,1 +1,15 @@
 build/
+*.dll
+*.lib
+*.lk1
+*.o
+*.a
+*.so
+*.dylib
+*.map
+*.mk1
+*.obj
+*.sym
+*.mk
+*.lb1
+*.exe
