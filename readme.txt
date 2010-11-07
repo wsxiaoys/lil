@@ -15,7 +15,9 @@ LIL: A Little Interpreted Language
      4.5. Register native functions
      4.6. Other LIL library functions
      4.7. LIL callback summary
-  5. Contact
+     4.8. Using LIL as a DLL
+  5. Integrating LIL in non-C programs
+  6. Contact
 
 
 1. About
@@ -664,7 +666,11 @@ LIL: A Little Interpreted Language
      
      2. Put the lil.c and lil.h files directly in your project
    
-   Whichever method you choose, the rest is the same.
+   Whichever method you choose, the rest is the same.  Please note that
+ the LIL interface should not be considered as frozen at this point.  The
+ library is under constant development and might change.  In the future a
+ frozen API will be provided but even that will only be guaranteed to
+ survive major versions.
 
 4.1. Initialize LIL
      --------------
@@ -926,8 +932,62 @@ LIL: A Little Interpreted Language
                   would be normally returned. Otherwise the original value
                   is used
 
+4.8. Using LIL as a DLL
+     ------------------
+   The C code of LIL was not written to be used as a DLL, so keep that in
+ mind when you decide to use LIL via a DLL.  Using LIL as a DLL requires a
+ couple of extra steps to be performed:
+ 
+     * LIL itself and every code that includes lil.h must be compiled with
+       the LILDLL conditional defined.  This will cause all public functions
+       to be marked as DLL exportable/importable and use the stdcall
+       calling convention.  Note that because by default if no LILDLL is
+       defined the library will use the compiler's default calling
+       convention you shouldn't mix LILDLL with non-LILDLL sources
+     * The LILCALLBACK macro must be used for callbacks.  For example this
+     
+           static lil_value_t fnc_hi(lil_t lil,
+                                     size_t argc,
+                                     lil_value_t* argv)
+       
+       must be changed to this
 
-5. Contact
+           static LILCALLBACK lil_value_t fnc_hi(lil_t lil,
+                                                 size_t argc,
+                                                 lil_value_t* argv)
+ 
+   Under the "dll" directory there is an OpenWatcom project file which will
+ create a lil.dll file you can use.  Note that it is highly recommended to
+ not mix different DLL versions.  The LIL API and binary interface is not
+ frozen and the DLL interface might change.
+ 
+ 
+5. Integrating LIL in non-C programs
+------------------------------------
+   It is possible to use LIL from non-C programs as long as a method to
+ link against C is provided and the language supports the data types used
+ by the public LIL interface (only data types are needed, the public
+ interface does not use C structs).  Currently under Windows it is
+ recommended to use the DLL version of LIL built using the OpenWatcom
+ project found under the "dll" directory of the LIL repository (although it
+ might be possible to build a compatible version with MinGW or Visual C++,
+ i have not checked this).
+ 
+   While you can write the interface yourself, there are some prewritten
+ interfaces which you can find at the Import LIL project at:
+ 
+     https://github.com/badsector/implil
+     
+   Currently the following languages/environments are supported:
+   
+     * Visual C# / .NET 4
+       (will probably work under older versions, might work under Mono)
+       
+   Check the above site for further and up-to-date information (might list
+ other supported interfaces).
+ 
+
+6. Contact
 ----------
   Kostas Michalopoulos
   badsector@runtimelegend.com
