@@ -29,7 +29,7 @@
 static int running = 1;
 static int exit_code = 0;
 
-static void do_exit(lil_t lil, lil_value_t val)
+static LILCALLBACK void do_exit(lil_t lil, lil_value_t val)
 {
     running = 0;
     exit_code = (int)lil_to_integer(val);

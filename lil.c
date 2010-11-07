@@ -21,6 +21,7 @@
  * Kostas Michalopoulos <badsector@runtimelegend.com>
  */
 
+#define __LIL_C_FILE__
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -1731,6 +1732,11 @@ lil_value_t lil_unused_name(lil_t lil, const char* part)
     return NULL;
 }
 
+lil_value_t lil_arg(lil_value_t* argv, size_t index)
+{
+    return argv ? argv[index] : NULL;
+}
+
 const char* lil_to_string(lil_value_t val)
 {
     return (val && val->d) ? val->d : "";
@@ -1802,7 +1808,7 @@ void lil_free(lil_t lil)
     free(lil);
 }
 
-static lil_value_t fnc_reflect(lil_t lil, size_t argc, lil_value_t* argv)
+static LILCALLBACK lil_value_t fnc_reflect(lil_t lil, size_t argc, lil_value_t* argv)
 {
     lil_func_t func;
     const char* type;
@@ -1890,7 +1896,7 @@ static lil_value_t fnc_reflect(lil_t lil, size_t argc, lil_value_t* argv)
     return NULL;
 }
 
-static lil_value_t fnc_func(lil_t lil, size_t argc, lil_value_t* argv)
+static LILCALLBACK lil_value_t fnc_func(lil_t lil, size_t argc, lil_value_t* argv)
 {
     lil_value_t name;
     lil_func_t cmd;
@@ -1916,7 +1922,7 @@ static lil_value_t fnc_func(lil_t lil, size_t argc, lil_value_t* argv)
     return name;
 }
 
-static lil_value_t fnc_quote(lil_t lil, size_t argc, lil_value_t* argv)
+static LILCALLBACK lil_value_t fnc_quote(lil_t lil, size_t argc, lil_value_t* argv)
 {
     lil_value_t r;
     size_t i;
@@ -1929,7 +1935,7 @@ static lil_value_t fnc_quote(lil_t lil, size_t argc, lil_value_t* argv)
     return r;
 }
 
-static lil_value_t fnc_set(lil_t lil, size_t argc, lil_value_t* argv)
+static LILCALLBACK lil_value_t fnc_set(lil_t lil, size_t argc, lil_value_t* argv)
 {
     size_t i = 0;
     lil_var_t var;
@@ -1947,7 +1953,7 @@ static lil_value_t fnc_set(lil_t lil, size_t argc, lil_value_t* argv)
     return var ? lil_clone_value(var->v) : NULL;
 }
 
-static lil_value_t fnc_write(lil_t lil, size_t argc, lil_value_t* argv)
+static LILCALLBACK lil_value_t fnc_write(lil_t lil, size_t argc, lil_value_t* argv)
 {
     size_t i;
     lil_value_t msg = lil_alloc_string(NULL);
@@ -1962,7 +1968,7 @@ static lil_value_t fnc_write(lil_t lil, size_t argc, lil_value_t* argv)
     return msg;
 }
 
-static lil_value_t fnc_print(lil_t lil, size_t argc, lil_value_t* argv)
+static LILCALLBACK lil_value_t fnc_print(lil_t lil, size_t argc, lil_value_t* argv)
 {
     lil_value_t r = fnc_write(lil, argc, argv);
     if (lil->callback[LIL_CALLBACK_WRITE]) {
@@ -1972,7 +1978,7 @@ static lil_value_t fnc_print(lil_t lil, size_t argc, lil_value_t* argv)
     return r;
 }
 
-static lil_value_t fnc_eval(lil_t lil, size_t argc, lil_value_t* argv)
+static LILCALLBACK lil_value_t fnc_eval(lil_t lil, size_t argc, lil_value_t* argv)
 {
     if (argc == 1) return lil_parse_value(lil, argv[0], 1);
     if (argc > 1) {
@@ -1989,7 +1995,7 @@ static lil_value_t fnc_eval(lil_t lil, size_t argc, lil_value_t* argv)
     return NULL;
 }
 
-static lil_value_t fnc_jaileval(lil_t lil, size_t argc, lil_value_t* argv)
+static LILCALLBACK lil_value_t fnc_jaileval(lil_t lil, size_t argc, lil_value_t* argv)
 {
     size_t i;
     lil_t sublil;
@@ -2013,7 +2019,7 @@ static lil_value_t fnc_jaileval(lil_t lil, size_t argc, lil_value_t* argv)
     return r;
 }
 
-static lil_value_t fnc_count(lil_t lil, size_t argc, lil_value_t* argv)
+static LILCALLBACK lil_value_t fnc_count(lil_t lil, size_t argc, lil_value_t* argv)
 {
     lil_list_t list;
     char buff[64];
@@ -2024,7 +2030,7 @@ static lil_value_t fnc_count(lil_t lil, size_t argc, lil_value_t* argv)
     return alloc_value(buff);
 }
 
-static lil_value_t fnc_index(lil_t lil, size_t argc, lil_value_t* argv)
+static LILCALLBACK lil_value_t fnc_index(lil_t lil, size_t argc, lil_value_t* argv)
 {
     lil_list_t list;
     size_t index;
@@ -2040,7 +2046,7 @@ static lil_value_t fnc_index(lil_t lil, size_t argc, lil_value_t* argv)
     return r;
 }
 
-static lil_value_t fnc_append(lil_t lil, size_t argc, lil_value_t* argv)
+static LILCALLBACK lil_value_t fnc_append(lil_t lil, size_t argc, lil_value_t* argv)
 {
     lil_list_t list;
     lil_value_t r;
@@ -2064,7 +2070,7 @@ static lil_value_t fnc_append(lil_t lil, size_t argc, lil_value_t* argv)
     return r;
 }
 
-static lil_value_t fnc_list(lil_t lil, size_t argc, lil_value_t* argv)
+static LILCALLBACK lil_value_t fnc_list(lil_t lil, size_t argc, lil_value_t* argv)
 {
     lil_list_t list = lil_alloc_list();
     lil_value_t r;
@@ -2076,13 +2082,13 @@ static lil_value_t fnc_list(lil_t lil, size_t argc, lil_value_t* argv)
     return r;
 }
 
-static lil_value_t fnc_subst(lil_t lil, size_t argc, lil_value_t* argv)
+static LILCALLBACK lil_value_t fnc_subst(lil_t lil, size_t argc, lil_value_t* argv)
 {
     if (argc < 1) return NULL;
     return lil_subst_to_value(lil, argv[0]);
 }
 
-static lil_value_t fnc_concat(lil_t lil, size_t argc, lil_value_t* argv)
+static LILCALLBACK lil_value_t fnc_concat(lil_t lil, size_t argc, lil_value_t* argv)
 {
     lil_list_t list;
     lil_value_t r, tmp;
@@ -2099,7 +2105,7 @@ static lil_value_t fnc_concat(lil_t lil, size_t argc, lil_value_t* argv)
     return r;
 }
 
-static lil_value_t fnc_foreach(lil_t lil, size_t argc, lil_value_t* argv)
+static LILCALLBACK lil_value_t fnc_foreach(lil_t lil, size_t argc, lil_value_t* argv)
 {
     lil_list_t list, rlist;
     lil_value_t r;
@@ -2127,14 +2133,14 @@ static lil_value_t fnc_foreach(lil_t lil, size_t argc, lil_value_t* argv)
     return r;
 }
 
-static lil_value_t fnc_return(lil_t lil, size_t argc, lil_value_t* argv)
+static LILCALLBACK lil_value_t fnc_return(lil_t lil, size_t argc, lil_value_t* argv)
 {
     lil->breakrun = 1;
     lil->retval = argc < 1 ? NULL : lil_clone_value(argv[0]);
     return NULL;
 }
 
-static lil_value_t fnc_expr(lil_t lil, size_t argc, lil_value_t* argv)
+static LILCALLBACK lil_value_t fnc_expr(lil_t lil, size_t argc, lil_value_t* argv)
 {
     if (argc == 1) return lil_eval_expr(lil, argv[0]);
     if (argc > 1) {
@@ -2163,19 +2169,19 @@ static lil_value_t real_inc(lil_t lil, const char* varname, float v)
     return pv;
 }
 
-static lil_value_t fnc_inc(lil_t lil, size_t argc, lil_value_t* argv)
+static LILCALLBACK lil_value_t fnc_inc(lil_t lil, size_t argc, lil_value_t* argv)
 {
     if (argc < 1) return NULL;
     return real_inc(lil, lil_to_string(argv[0]), argc > 1 ? lil_to_double(argv[1]) : 1);
 }
 
-static lil_value_t fnc_dec(lil_t lil, size_t argc, lil_value_t* argv)
+static LILCALLBACK lil_value_t fnc_dec(lil_t lil, size_t argc, lil_value_t* argv)
 {
     if (argc < 1) return NULL;
     return real_inc(lil, lil_to_string(argv[0]), -(argc > 1 ? lil_to_double(argv[1]) : 1));
 }
 
-static lil_value_t fnc_read(lil_t lil, size_t argc, lil_value_t* argv)
+static LILCALLBACK lil_value_t fnc_read(lil_t lil, size_t argc, lil_value_t* argv)
 {
     FILE* f;
     size_t size;
@@ -2201,7 +2207,7 @@ static lil_value_t fnc_read(lil_t lil, size_t argc, lil_value_t* argv)
     return r;
 }
 
-static lil_value_t fnc_store(lil_t lil, size_t argc, lil_value_t* argv)
+static LILCALLBACK lil_value_t fnc_store(lil_t lil, size_t argc, lil_value_t* argv)
 {
     FILE* f;
     const char* buffer;
@@ -2219,7 +2225,7 @@ static lil_value_t fnc_store(lil_t lil, size_t argc, lil_value_t* argv)
     return lil_clone_value(argv[1]);
 }
 
-static lil_value_t fnc_if(lil_t lil, size_t argc, lil_value_t* argv)
+static LILCALLBACK lil_value_t fnc_if(lil_t lil, size_t argc, lil_value_t* argv)
 {
     lil_value_t val, r = NULL;
     int base = 0, not = 0, v;
@@ -2239,7 +2245,7 @@ static lil_value_t fnc_if(lil_t lil, size_t argc, lil_value_t* argv)
     return r;
 }
 
-static lil_value_t fnc_while(lil_t lil, size_t argc, lil_value_t* argv)
+static LILCALLBACK lil_value_t fnc_while(lil_t lil, size_t argc, lil_value_t* argv)
 {
     lil_value_t val, r = NULL;
     int base = 0, not = 0, v;
@@ -2262,7 +2268,7 @@ static lil_value_t fnc_while(lil_t lil, size_t argc, lil_value_t* argv)
     return r;
 }
 
-static lil_value_t fnc_for(lil_t lil, size_t argc, lil_value_t* argv)
+static LILCALLBACK lil_value_t fnc_for(lil_t lil, size_t argc, lil_value_t* argv)
 {
     lil_value_t val, r = NULL;
     if (argc < 4) return NULL;
@@ -2282,7 +2288,7 @@ static lil_value_t fnc_for(lil_t lil, size_t argc, lil_value_t* argv)
     return r;
 }
 
-static lil_value_t fnc_charat(lil_t lil, size_t argc, lil_value_t* argv)
+static LILCALLBACK lil_value_t fnc_charat(lil_t lil, size_t argc, lil_value_t* argv)
 {
     size_t index;
     char chstr[2];
@@ -2296,7 +2302,7 @@ static lil_value_t fnc_charat(lil_t lil, size_t argc, lil_value_t* argv)
     return lil_alloc_string(chstr);
 }
 
-static lil_value_t fnc_codeat(lil_t lil, size_t argc, lil_value_t* argv)
+static LILCALLBACK lil_value_t fnc_codeat(lil_t lil, size_t argc, lil_value_t* argv)
 {
     size_t index;
     const char* str;
@@ -2307,7 +2313,7 @@ static lil_value_t fnc_codeat(lil_t lil, size_t argc, lil_value_t* argv)
     return lil_alloc_integer(str[index]);
 }
 
-static lil_value_t fnc_substr(lil_t lil, size_t argc, lil_value_t* argv)
+static LILCALLBACK lil_value_t fnc_substr(lil_t lil, size_t argc, lil_value_t* argv)
 {
     const char* str;
     lil_value_t r;
@@ -2326,7 +2332,7 @@ static lil_value_t fnc_substr(lil_t lil, size_t argc, lil_value_t* argv)
     return r;
 }
 
-static lil_value_t fnc_strpos(lil_t lil, size_t argc, lil_value_t* argv)
+static LILCALLBACK lil_value_t fnc_strpos(lil_t lil, size_t argc, lil_value_t* argv)
 {
     const char* hay;
     const char* str;
@@ -2342,7 +2348,7 @@ static lil_value_t fnc_strpos(lil_t lil, size_t argc, lil_value_t* argv)
     return lil_alloc_integer(str - hay);
 }
 
-static lil_value_t fnc_length(lil_t lil, size_t argc, lil_value_t* argv)
+static LILCALLBACK lil_value_t fnc_length(lil_t lil, size_t argc, lil_value_t* argv)
 {
     size_t i, total = 0;
     for (i=0; i<argc; i++) {
@@ -2352,19 +2358,19 @@ static lil_value_t fnc_length(lil_t lil, size_t argc, lil_value_t* argv)
     return lil_alloc_integer((int64_t)total);
 }
 
-static lil_value_t fnc_strcmp(lil_t lil, size_t argc, lil_value_t* argv)
+static LILCALLBACK lil_value_t fnc_strcmp(lil_t lil, size_t argc, lil_value_t* argv)
 {
     if (argc < 2) return NULL;
     return lil_alloc_integer(strcmp(lil_to_string(argv[0]), lil_to_string(argv[1])));
 }
 
-static lil_value_t fnc_streq(lil_t lil, size_t argc, lil_value_t* argv)
+static LILCALLBACK lil_value_t fnc_streq(lil_t lil, size_t argc, lil_value_t* argv)
 {
     if (argc < 2) return NULL;
     return lil_alloc_integer(strcmp(lil_to_string(argv[0]), lil_to_string(argv[1]))?0:1);
 }
 
-static lil_value_t fnc_repstr(lil_t lil, size_t argc, lil_value_t* argv)
+static LILCALLBACK lil_value_t fnc_repstr(lil_t lil, size_t argc, lil_value_t* argv)
 {
     const char* from;
     const char* to;
@@ -2400,7 +2406,7 @@ static lil_value_t fnc_repstr(lil_t lil, size_t argc, lil_value_t* argv)
     return r;
 }
 
-static lil_value_t fnc_split(lil_t lil, size_t argc, lil_value_t* argv)
+static LILCALLBACK lil_value_t fnc_split(lil_t lil, size_t argc, lil_value_t* argv)
 {
     lil_list_t list;
     char sep = ' ';
@@ -2429,7 +2435,7 @@ static lil_value_t fnc_split(lil_t lil, size_t argc, lil_value_t* argv)
     return val;
 }
 
-static lil_value_t fnc_try(lil_t lil, size_t argc, lil_value_t* argv)
+static LILCALLBACK lil_value_t fnc_try(lil_t lil, size_t argc, lil_value_t* argv)
 {
     lil_value_t r;
     if (argc < 1) return NULL;
@@ -2444,13 +2450,13 @@ static lil_value_t fnc_try(lil_t lil, size_t argc, lil_value_t* argv)
     return r;
 }
 
-static lil_value_t fnc_error(lil_t lil, size_t argc, lil_value_t* argv)
+static LILCALLBACK lil_value_t fnc_error(lil_t lil, size_t argc, lil_value_t* argv)
 {
     lil_set_error(lil, argc > 0 ? lil_to_string(argv[0]) : NULL);
     return NULL;
 }
 
-static lil_value_t fnc_exit(lil_t lil, size_t argc, lil_value_t* argv)
+static LILCALLBACK lil_value_t fnc_exit(lil_t lil, size_t argc, lil_value_t* argv)
 {
     if (lil->callback[LIL_CALLBACK_EXIT]) {
         lil_exit_callback_proc_t proc = (lil_exit_callback_proc_t)lil->callback[LIL_CALLBACK_EXIT];
@@ -2459,7 +2465,7 @@ static lil_value_t fnc_exit(lil_t lil, size_t argc, lil_value_t* argv)
     return NULL;
 }
 
-static lil_value_t fnc_source(lil_t lil, size_t argc, lil_value_t* argv)
+static LILCALLBACK lil_value_t fnc_source(lil_t lil, size_t argc, lil_value_t* argv)
 {
     FILE* f;
     size_t size;
@@ -2488,7 +2494,7 @@ static lil_value_t fnc_source(lil_t lil, size_t argc, lil_value_t* argv)
     return r;
 }
 
-static lil_value_t fnc_lmap(lil_t lil, size_t argc, lil_value_t* argv)
+static LILCALLBACK lil_value_t fnc_lmap(lil_t lil, size_t argc, lil_value_t* argv)
 {
     lil_list_t list;
     size_t i;
@@ -2500,7 +2506,7 @@ static lil_value_t fnc_lmap(lil_t lil, size_t argc, lil_value_t* argv)
     return NULL;
 }
 
-static lil_value_t fnc_rand(lil_t lil, size_t argc, lil_value_t* argv)
+static LILCALLBACK lil_value_t fnc_rand(lil_t lil, size_t argc, lil_value_t* argv)
 {
     return lil_alloc_double(rand()/(double)RAND_MAX);
 }

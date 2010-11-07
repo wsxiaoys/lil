@@ -42,9 +42,15 @@
 #define LIL_CALLBACK_GETVAR 7
 
 #if defined(LILDLL) && (defined(WIN32) || defined(_WIN32))
-#define LILAPI __declspec(dllexport)
+#ifdef __LIL_C_FILE__
+#define LILAPI __declspec(dllexport __stdcall)
+#else
+#define LILAPI __declspec(dllimport __stdcall)
+#endif
+#define LILCALLBACK __declspec(__stdcall)
 #else
 #define LILAPI
+#define LILCALLBACK
 #endif
 
 typedef struct _lil_value_t* lil_value_t;
@@ -53,16 +59,16 @@ typedef struct _lil_var_t* lil_var_t;
 typedef struct _lil_env_t* lil_env_t;
 typedef struct _lil_list_t* lil_list_t;
 typedef struct _lil_t* lil_t;
-typedef lil_value_t (*lil_func_proc_t)(lil_t lil, size_t argc, lil_value_t* argv);
-typedef void (*lil_exit_callback_proc_t)(lil_t lil, lil_value_t arg);
-typedef void (*lil_write_callback_proc_t)(lil_t lil, const char* msg);
-typedef char* (*lil_read_callback_proc_t)(lil_t lil, const char* name);
-typedef char* (*lil_source_callback_proc_t)(lil_t lil, const char* name);
-typedef void (*lil_store_callback_proc_t)(lil_t lil, const char* name, const char* data);
-typedef void (*lil_error_callback_proc_t)(lil_t lil, size_t pos, const char* msg);
-typedef int (*lil_setvar_callback_proc_t)(lil_t lil, const char* name, lil_value_t* value);
-typedef int (*lil_getvar_callback_proc_t)(lil_t lil, const char* name, lil_value_t* value);
-typedef void (*lil_callback_proc_t)(void);
+typedef LILCALLBACK lil_value_t (*lil_func_proc_t)(lil_t lil, size_t argc, lil_value_t* argv);
+typedef LILCALLBACK void (*lil_exit_callback_proc_t)(lil_t lil, lil_value_t arg);
+typedef LILCALLBACK void (*lil_write_callback_proc_t)(lil_t lil, const char* msg);
+typedef LILCALLBACK char* (*lil_read_callback_proc_t)(lil_t lil, const char* name);
+typedef LILCALLBACK char* (*lil_source_callback_proc_t)(lil_t lil, const char* name);
+typedef LILCALLBACK void (*lil_store_callback_proc_t)(lil_t lil, const char* name, const char* data);
+typedef LILCALLBACK void (*lil_error_callback_proc_t)(lil_t lil, size_t pos, const char* msg);
+typedef LILCALLBACK int (*lil_setvar_callback_proc_t)(lil_t lil, const char* name, lil_value_t* value);
+typedef LILCALLBACK int (*lil_getvar_callback_proc_t)(lil_t lil, const char* name, lil_value_t* value);
+typedef LILCALLBACK void (*lil_callback_proc_t)(void);
 
 LILAPI lil_t lil_new(void);
 LILAPI void lil_free(lil_t lil);
@@ -114,5 +120,7 @@ LILAPI lil_value_t lil_get_var_or(lil_t lil, const char* name, lil_value_t defva
 
 LILAPI lil_value_t lil_eval_expr(lil_t lil, lil_value_t code);
 LILAPI lil_value_t lil_unused_name(lil_t lil, const char* part);
+
+LILAPI lil_value_t lil_arg(lil_value_t* argv, size_t index);
 
 #endif
