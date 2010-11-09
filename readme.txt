@@ -982,6 +982,7 @@ LIL: A Little Interpreted Language
    
      * Visual C# / .NET 4
        (will probably work under older versions, might work under Mono)
+     * FreePascal (and Lazarus)
        
    Check the above site for further and up-to-date information (might list
  other supported interfaces).
