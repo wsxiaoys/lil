@@ -875,6 +875,20 @@ LIL: A Little Interpreted Language
                                  const char* part)
  
  which can be used to return an unused LIL name using the given part.
+ 
+   Sometimes you need to associate some piece of data (like an object or a
+ script name) with a LIL runtime.  You can use the following functions to
+ associate a pointer to a lil_t object and retrieve it:
+ 
+     void lil_set_data(lil_t lil,
+                       void* data)
+  
+  which associates "data" with the given lil object and
+  
+     void* lil_get_data(lil_t lil)
+  
+  which returns the associated data with the given lil object. By default
+  this will return NULL if no call to lil_set_data() is made.
 
 4.7. LIL callback summary
      --------------------
