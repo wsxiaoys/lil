@@ -123,4 +123,7 @@ LILAPI lil_value_t lil_unused_name(lil_t lil, const char* part);
 
 LILAPI lil_value_t lil_arg(lil_value_t* argv, size_t index);
 
+LILAPI void lil_set_data(lil_t lil, void* data);
+LILAPI void* lil_get_data(lil_t lil);
+
 #endif

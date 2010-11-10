@@ -94,6 +94,7 @@ struct _lil_t
     char* err_msg;
     lil_callback_proc_t callback[CALLBACKS];
     size_t parse_depth;
+    void* data;
 };
 
 typedef struct _expreval_t
@@ -1806,6 +1807,16 @@ void lil_free(lil_t lil)
     }
     free(lil->cmd);
     free(lil);
+}
+
+LILAPI void lil_set_data(lil_t lil, void* data)
+{
+    lil->data = data;
+}
+
+LILAPI void* lil_get_data(lil_t lil)
+{
+    return lil->data;
 }
 
 static LILCALLBACK lil_value_t fnc_reflect(lil_t lil, size_t argc, lil_value_t* argv)
