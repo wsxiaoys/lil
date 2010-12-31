@@ -685,7 +685,7 @@ void lil_set_error(lil_t lil, const char* msg)
     free(lil->err_msg);
     lil->error = ERROR_FIXHEAD;
     lil->err_head = 0;
-    lil->err_msg = strdup(msg ? msg : "");
+    lil->err_msg = strclone(msg ? msg : "");
 }
 
 void lil_set_error_at(lil_t lil, size_t pos, const char* msg)
@@ -694,7 +694,7 @@ void lil_set_error_at(lil_t lil, size_t pos, const char* msg)
     free(lil->err_msg);
     lil->error = ERROR_DEFAULT;
     lil->err_head = pos;
-    lil->err_msg = strdup(msg ? msg : "");
+    lil->err_msg = strclone(msg ? msg : "");
 }
 
 int lil_error(lil_t lil, const char** msg, size_t* pos)
@@ -2397,7 +2397,7 @@ static LILCALLBACK lil_value_t fnc_repstr(lil_t lil, size_t argc, lil_value_t* a
     from = lil_to_string(argv[1]);
     to = lil_to_string(argv[2]);
     if (!from[0]) return NULL;
-    src = strdup(lil_to_string(argv[0]));
+    src = strclone(lil_to_string(argv[0]));
     srclen = strlen(src);
     fromlen = strlen(from);
     tolen = strlen(to);
