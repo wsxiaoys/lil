@@ -46,13 +46,13 @@ LIL: A Little Interpreted Language
        (missing stdint.h, atoll, should compile with modifications)
  
  Users of older versions of Microsoft Visual C++ need to use a stdint.h
- file provided by external sources. A commonly used one stdint.h file for
+ file provided by external sources.  A commonly used one stdint.h file for
  MSVC is http://msinttypes.googlecode.com/svn/trunk/stdint.h 
  
  As a side note, LIL has nothing to do with the "Little Implementation
  Language" for PDP (which i learned about months after i chose the name
- LIL for my library). Apparently that LIL was made during the same time as
- the UNIX system and the C language by P.J. Plauger. If you are interested
+ LIL for my library).  Apparently that LIL was made during the same time as
+ the UNIX system and the C language by P.J.  Plauger.  If you are interested
  in this historical language you can read about it here:
  
      http://www.ultimate.com/phil/lil/
@@ -215,7 +215,7 @@ LIL: A Little Interpreted Language
      print $name
  
  Note two important things however: first, the name of the variable is NOT
- "$name".  It is "name". The dollar is used as a shortcut for "[set name]".
+ "$name".  It is "name".  The dollar is used as a shortcut for "[set name]".
  And second, it *really* is a shortcut: the "set" function will be called
  even if you don't type it (so if you override it, the overridden function
  will be called).
@@ -236,7 +236,7 @@ LIL: A Little Interpreted Language
  plain old string.  And since you don't want to process that string's
  contents directly, you need curly brackets.
 
-   The definition of a new function is done using the "func" function. This
+   The definition of a new function is done using the "func" function.  This
  function accepts zero or more arguments (when zero arguments are given,
  the function does nothing and returns an empty string).  When three
  arguments are given (the most common case) they are considered as the name
@@ -254,7 +254,7 @@ LIL: A Little Interpreted Language
  as those specified in the argument list the arguments passed to the
  function in the same order as they appear in the argument list.  So for
  example when evaluating the above function LIL will save the first
- argument passed to the function in "a" and the second argument in "b". If
+ argument passed to the function in "a" and the second argument in "b".  If
  more arguments are given these are lost and if less arguments are given,
  the rest of the expected arguments are set to empty strings (so for
  example if "foo 32" is given the "b" variable will be an empty string).
@@ -280,8 +280,8 @@ LIL: A Little Interpreted Language
  (when the special "args" name is used, the first word in the list will
  always be the function's name)
  
-   The "func" function can also be used with two or even one argument. This
- use allows the definition of anonymous (or actually, randomly named)
+   The "func" function can also be used with two or even one argument.
+ This use allows the definition of anonymous (or actually, randomly named)
  functions.  In the two arguments format, the first argument is the
  arguments list as previously and the second argument is the function's
  code.  For example
@@ -347,7 +347,7 @@ LIL: A Little Interpreted Language
  "global" is only needed for code that runs from functions.  Code that is
  executed outside a function always uses the global environment.
 
-   The last note on LIL's syntax is word concatenation. This is really
+   The last note on LIL's syntax is word concatenation.  This is really
  simple (and technically is not concatenation at all but it is easier to
  think it like this): if two words are not separated by space they are
  combined to a single word.  So for example the command
@@ -363,7 +363,7 @@ LIL: A Little Interpreted Language
  not separated by a space.
  
    LIL commands are separated by newlines (each command takes a whole line)
- or the ; character. For example, for LIL the code
+ or the ; character.  For example, for LIL the code
  
      print hello ; print world
  
@@ -385,6 +385,7 @@ LIL: A Little Interpreted Language
 
 3. Standard LIL functions
 -------------------------
+
    Here is a summary of the functions that LIL provides by default to all
  LIL scripts (in order of appearance in the lil.c file):
  
@@ -430,19 +431,19 @@ LIL: A Little Interpreted Language
        error condition active (this is usually used with the try function)
      
      func [name] [argument list | "args"] <code>
-       register a new function. See the section 2 for more information
+       register a new function.  See the section 2 for more information
      
      quote [...]
        return the arguments as a single space-separated string
      
      set ["global"] [name [value] ...]
-       set the variable "name" to the "value". If there is an odd number of
+       set the variable "name" to the "value".  If there is an odd number of
        arguments, the function returns the value of the variable which has
-       the same name as the last argument. Otherwise an empty value is
-       returned. See section 2 for details
+       the same name as the last argument.  Otherwise an empty value is
+       returned.  See section 2 for details
      
      write [...]
-       write the arguments separated by spaces to the program output. By
+       write the arguments separated by spaces to the program output.  By
        default this is the standard output but a program can override this
        using the LIL_CALLBACK_WRITE callback
      
@@ -451,12 +452,12 @@ LIL: A Little Interpreted Language
      
      eval [...]
        combines the arguments to a single string and evaluates it as LIL
-       code. The function returns the result of the LIL code
+       code.  The function returns the result of the LIL code
        
      jaileval ["clean"] <code>
-       the <code> will be executed in its own LIL environment. Unless
+       the <code> will be executed in its own LIL environment.  Unless
        "clean" is specified, the new LIL environment will get a copy of the
-       currently registered native functions. The <code> can use "return" to
+       currently registered native functions.  The <code> can use "return" to
        return a value (which is returned by jaileval)
      
      count <list>
@@ -467,7 +468,7 @@ LIL: A Little Interpreted Language
      
      append ["global"] <list> <value>
        appends the <value> value to the variable containing the <list>
-       list (or creates it if the variable is not defined). If the "global"
+       list (or creates it if the variable is not defined).  If the "global"
        special word is used, the list variable is assumed to be a global
        variable
      
@@ -475,7 +476,7 @@ LIL: A Little Interpreted Language
        returns a list with the arguments as its items
      
      subst [...]
-       perform string substitution to the arguments. For example the code
+       perform string substitution to the arguments.  For example the code
        
          set foo bar
          set str {foo$foo}
@@ -489,8 +490,8 @@ LIL: A Little Interpreted Language
      
      foreach [name] <list> <code>
        for each item in the <list> list, stores it to a variable named "i"
-       and evalues the code in <code>. If [name] is provided, this will be
-       used instead of "i". The results of all evaluations are stored in a
+       and evalues the code in <code>.  If [name] is provided, this will be
+       used instead of "i".  The results of all evaluations are stored in a
        list which is returned by the function
      
      return [value]
@@ -500,7 +501,7 @@ LIL: A Little Interpreted Language
      
      expr [...]
        combines all arguments into a single string and evaluates the
-       mathematical expression in that string. The expression can use the
+       mathematical expression in that string.  The expression can use the
        following operators (in the order presented):
        
           (a)        - parentheses
@@ -536,66 +537,66 @@ LIL: A Little Interpreted Language
           a && b     - logical AND
      
      inc <name> [value]
-       numerically add [value] to the variable "name". If [value] is not
+       numerically add [value] to the variable "name".  If [value] is not
        provided, 1 will be added instead
      
      dec <name> [value]
-       numerically subtract [value] to the variable "name". If [value] is
+       numerically subtract [value] to the variable "name".  If [value] is
        not provided, 1 will be subtracted instead
      
      read <name>
-       reads and returns the contents of the file <name>. By default LIL
+       reads and returns the contents of the file <name>.  By default LIL
        will look for the file in the host program's current directory, but
-       the program can override this using LIL_CALLBACK_READ. If the
+       the program can override this using LIL_CALLBACK_READ.  If the
        function failed to read the file it returns an empty value (note,
        however than a file can also be empty by itself)
      
      store <name> <value>
-       stores the <value> value in the file <name>. By default LIL will
+       stores the <value> value in the file <name>.  By default LIL will
        create the file in the host program's current directory, but the
-       program can override ths using LIL_CALLBACK_STORE. The function will
+       program can override ths using LIL_CALLBACK_STORE.  The function will
        always return <value>
      
      if ["not"] <value> <code> [else-code]
        if value <value> evaluates to true (non-zero, non-empty string), LIL
-       will evaluate the code in <code>. Otherwise (and if provided) the
-       code in [else-code] will be evaluated. If the "not" special word is
-       used, the check will be reversed. The function returns the result of
+       will evaluate the code in <code>.  Otherwise (and if provided) the
+       code in [else-code] will be evaluated.  If the "not" special word is
+       used, the check will be reversed.  The function returns the result of
        whichever code is evaluated
      
      while ["not"] <expr> <code>
        as long as <expr> evaluates to a true (or false if "not" is used)
-       value, LIL will evaluate <code>. The function returns the last
+       value, LIL will evaluate <code>.  The function returns the last
        result of the evaluation of <code> or an empty value if no
        evaluation happened (note, however that the last evaluation can
        also return an empty value)
      
      for <init> <expr> <step> <code>
-       the loop will begin by evaluating the code in <init> normally. Then
+       the loop will begin by evaluating the code in <init> normally.  Then
        as long as the expression <expr> evaluates to a true value, the
-       code in <code> will be evaluated followed by the code in <step>. The
+       code in <code> will be evaluated followed by the code in <step>.  The
        function returns the result of the last evaluation of <code>
      
      charat <str> <index>
-       returns the character at the given index of the given string. The index
-       begins with 0. If an invalid index is given, an empty value will be
+       returns the character at the given index of the given string.  The index
+       begins with 0.  If an invalid index is given, an empty value will be
        returned
      
      codeat <str> <index>
-       returns the character code at the given index of the given string. The
-       index begins with 0. If an invalid index is given, an empty value will
+       returns the character code at the given index of the given string.  The
+       index begins with 0.  If an invalid index is given, an empty value will
        be returned
      
      substr <str> <start> [length]
        returns the part of the given string beginning from <start> and for
-       [length] characters. If [length] is not given, the function will
-       return the string from <start> to the end of the string. The indices
+       [length] characters.  If [length] is not given, the function will
+       return the string from <start> to the end of the string.  The indices
        will be clamped to be within the string boundaries
      
      strpos <str> <part> [start]
-       returns the index of the string <part> in the string <str>. If
+       returns the index of the string <part> in the string <str>.  If
        [start] is provided, the search will begin from the character at
-       [start], otherwise it will begin from the first character. If the
+       [start], otherwise it will begin from the first character.  If the
        part is not found, the function will return -1
      
      length [...]
@@ -616,37 +617,37 @@ LIL: A Little Interpreted Language
      
      split <str> [sep]
        split the given string in substrings using [sep] as a separator and
-       return a list with the substrings. If [sep] is not given, the space
+       return a list with the substrings.  If [sep] is not given, the space
        is used as the separator
      
      try <code> [handler]
-       evaluates the code in <code> normally and returns its result. If an
+       evaluates the code in <code> normally and returns its result.  If an
        error occurs while the code in <code> is executed, the execution
        stops and the code in [handler] is evaluated, in which case the
-       function returns the result of [handler]. If [handler] is not
+       function returns the result of [handler].  If [handler] is not
        provided the function returns 0
      
      error [msg]
-       raises an error. If [msg] is given the error message is set to <msg>
-       otherwise no error message is set. The error can be captured using
+       raises an error.  If [msg] is given the error message is set to <msg>
+       otherwise no error message is set.  The error can be captured using
        the try function (see above)
      
      exit [code]
-       requests from the host program to exit. By default LIL will call the
+       requests from the host program to exit.  By default LIL will call the
        C function exit() but the host program can override this using the
-       LIL_CALLBACK_EXIT callback. If [code] is given it will be provided
+       LIL_CALLBACK_EXIT callback.  If [code] is given it will be provided
        as a potential exit code (but the program can use another if it
        provides a LIL_CALLBACK_EXIT callback)
      
      source <name>
-       read and evaluate LIL source code from the file <name>. The result
-       of the function is the result of the code evaluation. By default LIL
+       read and evaluate LIL source code from the file <name>.  The result
+       of the function is the result of the code evaluation.  By default LIL
        will look for a text file in the host program's current directory
        but the program can override that by using LIL_CALLBACK_SOURCE
      
      lmap <list> <name1> [name2 [name3 ...]]
        map the values in the list to variables specified by the rest of the
-       arguments. For example the command
+       arguments.  For example the command
        
          lmap [5 3 6] apple orange pear
          
@@ -655,6 +656,42 @@ LIL: A Little Interpreted Language
      
      rand
        returns a random number between 0.0 and 1.0
+       
+     catcher [code]
+       sets, removes or returns the current catcher code.  The code can be
+       used to "catch" calls of unknown functions and is executed inside
+       its own environment as if an anonymous function without specified
+       arguments was called.  This means that the code can access the name
+       and the arguments of the function call using the "args" list -
+       however unlike anonymous functions which get a random name, the zero
+       index of the args list contains the unknown function's name.  The
+       code can also use "return" to return some value.  If the catcher code
+       calls an unknown function, it will be called again - however to avoid
+       infinite loops a limit on the nested calls to the catcher code is set
+       using the MAX_CATCHER_DEPTH constant (which by default is set to
+       16384).
+       
+       This function can be used to implement small embedded DSLs in LIL code
+       or provide some sort of shell (as in UNIX shell) functionality by
+       delegating the unknown function calls to some other function/command
+       handler (like executing an external program).
+       
+       If catcher is called with an empty string, the catcher code is removed
+       and LIL will resume raising errors when an unknown function is called
+       (which is the default behavior before any call to catcher is made).
+       
+       If catcher is called without arguments it will return the current
+       catcher code.  This can be used to temporary save the current catcher
+       code when changing the catcher code temporarily.  For example
+       
+         set previous-catcher [catcher]
+         catcher {print Call failed: $args}
+         # do something
+         catcher $previous-catcher
+         
+       When using catcher for DSLs it is recommended to save the previous
+       catcher.  For an example of catcher with comments see the catcher.lil
+       source file.
 
 
 4. Integrating LIL in C programs
@@ -709,7 +746,7 @@ LIL: A Little Interpreted Language
  
 4.2. Execute LIL code
      ----------------
-   To execute LIL code use the lil_parse() function. This function has the
+   To execute LIL code use the lil_parse() function.  This function has the
  following signature:
  
      lil_value_t lil_parse(lil_t lil,
@@ -717,15 +754,15 @@ LIL: A Little Interpreted Language
                            size_t codelen,
                            int funclevel)
 
-   If 0 is given for codelen, LIL will simply use strlen for it. Funclevel
+   If 0 is given for codelen, LIL will simply use strlen for it.  Funclevel
  must always be 0 and is used by LIL itself when calling the code part of a
  function.
  
    The function will return a LIL value which must be released by calling
- lil_free_value(). The LIL value is the code's result.
+ lil_free_value().  The LIL value is the code's result.
 
    An alternative to lil_parse is lil_parse_value which can be used to
- parse code which is stored in a LIL value. The signature is
+ parse code which is stored in a LIL value.  The signature is
  
      lil_value_t lil_parse_value(lil_t lil,
                                  lil_value_t val,
@@ -740,11 +777,11 @@ LIL: A Little Interpreted Language
      void lil_set_error(lil_t lil,
                         const char* msg)
  
- where msg is the message of the error. The LIL script can use the "try"
+ where msg is the message of the error.  The LIL script can use the "try"
  function to catch the error or, if the error is not catched, the host
- program can use lil_error() to obtain information about it. The
+ program can use lil_error() to obtain information about it.  The
  lil_error() function will return a non-zero value if there is an error
- message available. The signature of the function is
+ message available.  The signature of the function is
  
      int lil_error(lil_t lil,
                    const char** msg,
@@ -756,7 +793,7 @@ LIL: A Little Interpreted Language
 
 4.4. Convert values between C and LIL
      --------------------------------
-   LIL uses the lil_value_t type for its own values. To convert from C to
+   LIL uses the lil_value_t type for its own values.  To convert from C to
  lil_value_t you use the following functions:
  
      lil_value_t lil_alloc_string(const char* str)
@@ -792,9 +829,9 @@ LIL: A Little Interpreted Language
      lil_value_t lil_list_get(lil_list_t list, size_t index)
      lil_value_t lil_list_to_value(lil_list_t list, int do_escape)
 
- the last function will convert a lil_list_t to a LIL value. Unless you are
+ the last function will convert a lil_list_t to a LIL value.  Unless you are
  sure that escaping is not needed, you should always use a non-zero value
- for do_escape. The reverse can be performed with
+ for do_escape.  The reverse can be performed with
 
      lil_list_t lil_subst_to_list(lil_t lil, lil_value_t code)
  
@@ -804,14 +841,14 @@ LIL: A Little Interpreted Language
 
 4.5. Register native functions
      ----------------------------
-   To register a new function in LIL use the lil_register() function. This
+   To register a new function in LIL use the lil_register() function.  This
  function has the following signature:
 
      int lil_register(lil_t lil,
                       const char* name,
                       lil_func_proc_t proc)
 
- and returns a non-zero value if the registration was successful. The
+ and returns a non-zero value if the registration was successful.  The
  native function must have the following signature:
  
      lil_value_t lil_func_proc(lil_t lil,
@@ -820,7 +857,7 @@ LIL: A Little Interpreted Language
  
  where lil is the lil object that issued the function, argc is the number
  of arguments used and argv is an array of "argc" lil_value_t elements with
- the arguments passed to the function. The function must return a newly
+ the arguments passed to the function.  The function must return a newly
  allocated lil_value_t object or NULL if the function returns nothing (or
  returns an empty string).
  
@@ -845,23 +882,23 @@ LIL: A Little Interpreted Language
                            lil_value_t val,
                            int local)
    
- which can be used to set a variable to a value. local must be one of
- LIL_SETVAR_LOCAL, LIL_SETVAR_LOCAL_NEW or LIL_SETVAR_GLOBAL. Usually you
- need LIL_SETVAR_LOCAL or LIL_SETVAR_GLOBAL. LIL_SETVAR_LOCAL_NEW will
+ which can be used to set a variable to a value.  local must be one of
+ LIL_SETVAR_LOCAL, LIL_SETVAR_LOCAL_NEW or LIL_SETVAR_GLOBAL.  Usually you
+ need LIL_SETVAR_LOCAL or LIL_SETVAR_GLOBAL.  LIL_SETVAR_LOCAL_NEW will
  always allocate a new variable in the environment and should be used with
- lil_push_env() and lil_pop_env(). See lil.c for details on how to use
+ lil_push_env() and lil_pop_env().  See lil.c for details on how to use
  these.
  
      lil_value_t lil_get_var(lil_t lil,
                              const char* name)
      
- which can be used to return the value of a variable. Alternatively
+ which can be used to return the value of a variable.  Alternatively
      
      lil_value_t lil_get_var_or(lil_t lil,
                                 const char* name,
                                 lil_value_t defvalue)
 
- which will return "defvalue" if the variable is not found. These two will
+ which will return "defvalue" if the variable is not found.  These two will
  always use the "current" environment (which will be a local environment if
  the function is called from a native function callback for a native
  function called from a script function).
@@ -887,7 +924,7 @@ LIL: A Little Interpreted Language
   
      void* lil_get_data(lil_t lil)
   
-  which returns the associated data with the given lil object. By default
+  which returns the associated data with the given lil object.  By default
   this will return NULL if no call to lil_set_data() is made.
 
 4.7. LIL callback summary
@@ -903,7 +940,7 @@ LIL: A Little Interpreted Language
      LIL_CALLBACK_WRITE:
        callback:  lil_write_callback_proc_t
        signature: void (lil_t lil, const char* msg)
-       called:    when the "print" or "write" function is called. It is
+       called:    when the "print" or "write" function is called.  It is
                   expected to parse the newline character \n
      
      LIL_CALLBACK_READ:
@@ -930,11 +967,11 @@ LIL: A Little Interpreted Language
        callback:  lil_setvar_callback_proc_t
        signature: int (lil_t lil, const char* name, lil_value_t* value)
        called:    when a non-existant variable is assigned in the global
-                  environment. If this returns a negative value, the
-                  assignment does not occur. If this returns a zero, the
+                  environment.  If this returns a negative value, the
+                  assignment does not occur.  If this returns a zero, the
                   value originally to be written is assigned to the
-                  variable. If this returns a positive value, the
-                  value pointed by "value" is assigned. This can be used
+                  variable.  If this returns a positive value, the
+                  value pointed by "value" is assigned.  This can be used
                   to override or cancel the assignment of a variable
      
      LIL_CALLBACK_GETVAR:
@@ -943,7 +980,7 @@ LIL: A Little Interpreted Language
        called:    when a variable is to be read from the global environment.
                   If this function returns a non-zero value, the value
                   pointed to by "value" is used instead of the value that
-                  would be normally returned. Otherwise the original value
+                  would be normally returned.  Otherwise the original value
                   is used
 
 4.8. Using LIL as a DLL
