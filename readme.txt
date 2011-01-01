@@ -218,7 +218,9 @@ LIL: A Little Interpreted Language
  "$name".  It is "name".  The dollar is used as a shortcut for "[set name]".
  And second, it *really* is a shortcut: the "set" function will be called
  even if you don't type it (so if you override it, the overridden function
- will be called).
+ will be called).  You can also change the behavior of $ by setting another
+ function to be called with "reflect dollar-prefix" (see section 3 for
+ details).
  
    Remember the part about curly brackets above? Well, if you type
    
@@ -429,20 +431,29 @@ LIL: A Little Interpreted Language
      reflect error
        returns the last error message or an empty string if there is no
        error condition active (this is usually used with the try function)
+
+     reflect dollar-prefix [prefix]
+       if [prefix] is specified, then this changes the dollar prefix.  If no
+       arguments are given, the current dollar prefix is returned.  The dollar
+       prefix is the command to be executed for dollar expansions (like $foo).
+       The word after the dollar prefix is appended immediately after the
+       prefix and the whole is executed.  The default dollar prefix is 'set '
+       (notice the space which will separate the call to "set" from the word
+       following)
      
      func [name] [argument list | "args"] <code>
        register a new function.  See the section 2 for more information
 
-	 rename <oldname> <newname>
-	   rename an existing function.  Note that the "set" function is used to
-	   access variables using the $ prefix so if the "set" function is
-	   renamed, variables will only be accessible using the new name.  The
-	   function returns the <oldname>
+     rename <oldname> <newname>
+       rename an existing function.  Note that the "set" function is used to
+       access variables using the $ prefix so if the "set" function is
+       renamed, variables will only be accessible using the new name.  The
+       function returns the <oldname>
 
-	 unusedname [part]
-	   return an unused function name.  This is a random name which has the
-	   form $$un$<part>$<some number>$nu$$.  The <part> is optional (if not
-	   provided "unusedname" will be used)
+     unusedname [part]
+       return an unused function name.  This is a random name which has the
+       form $$un$[part]$<some number>$nu$$.  The [part] is optional (if not
+       provided "unusedname" will be used)
      
      quote [...]
        return the arguments as a single space-separated string

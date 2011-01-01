@@ -87,6 +87,7 @@ struct _lil_t
     size_t syscmds;
     char* catcher;
     int in_catcher;
+    char* dollarprefix;
     lil_env_t env;
     lil_env_t rootenv;
     lil_value_t empty;
@@ -408,6 +409,7 @@ lil_t lil_new(void)
     lil_t lil = calloc(1, sizeof(struct _lil_t));
     lil->rootenv = lil->env = lil_alloc_env(NULL);
     lil->empty = alloc_value(NULL);
+    lil->dollarprefix = strclone("set ");
     register_stdcmds(lil);
     return lil;
 }
@@ -462,7 +464,7 @@ static lil_value_t get_dollarpart(lil_t lil)
     lil_value_t val, name, tmp;
     lil->head++;
     name = next_word(lil);
-    tmp = alloc_value("set ");
+    tmp = alloc_value(lil->dollarprefix);
     lil_append_val(tmp, name);
     lil_free_value(name);
     val = lil_parse_value(lil, tmp, 0);
@@ -1830,6 +1832,7 @@ void lil_free(lil_t lil)
         free(lil->cmd[i]);
     }
     free(lil->cmd);
+    free(lil->dollarprefix);
     free(lil->catcher);
     free(lil);
 }
@@ -1928,6 +1931,14 @@ static LILCALLBACK lil_value_t fnc_reflect(lil_t lil, size_t argc, lil_value_t* 
     }
     if (!strcmp(type, "error")) {
         return lil->err_msg ? lil_alloc_string(lil->err_msg) : NULL;
+    }
+    if (!strcmp(type, "dollar-prefix")) {
+        lil_value_t r;
+        if (argc == 1) return lil_alloc_string(lil->dollarprefix);
+        r = lil_alloc_string(lil->dollarprefix);
+        free(lil->dollarprefix);
+        lil->dollarprefix = strclone(lil_to_string(argv[1]));
+        return r;
     }
     return NULL;
 }
