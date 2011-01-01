@@ -21,6 +21,10 @@
  * Kostas Michalopoulos <badsector@runtimelegend.com>
  */
 
+#ifndef WIN32
+#define _BSD_SOURCE
+#include <unistd.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -36,10 +40,73 @@ static LILCALLBACK void do_exit(lil_t lil, lil_value_t val)
     exit_code = (int)lil_to_integer(val);
 }
 
+static char* do_system(size_t argc, char** argv)
+{
+    #ifdef WIN32
+    return NULL;
+    #else
+    char* cmd = NULL;
+    int cmdlen = 0;
+    size_t i;
+    FILE* p;
+    for (i=0; i<argc; i++) {
+        size_t len = strlen(argv[i]);
+        if (i != 0) {
+            cmd = realloc(cmd, cmdlen + 1);
+            cmd[cmdlen++] = ' ';
+        }
+        cmd = realloc(cmd, cmdlen + len);
+        memcpy(cmd + cmdlen, argv[i], len);
+        cmdlen += len;
+    }
+    cmd = realloc(cmd, cmdlen + 1);
+    cmd[cmdlen] = 0;
+    p = popen(cmd, "r");
+    free(cmd);
+    if (p) {
+        char* retval = NULL;
+        size_t size = 0;
+        char buff[1024];
+        ssize_t bytes;
+        while ((bytes = fread(buff, 1, 1024, p))) {
+            retval = realloc(retval, size + bytes);
+            memcpy(retval + size, buff, bytes);
+            size += bytes;
+        }
+        retval = realloc(retval, size + 1);
+        retval[size] = 0;
+        pclose(p);
+        return retval;
+    } else {
+        return NULL;
+    }
+    #endif
+}
+
+static LILCALLBACK lil_value_t fnc_system(lil_t lil, size_t argc, lil_value_t* argv)
+{
+    const char** sargv = malloc(sizeof(char*)*(argc + 1));
+    lil_value_t r = NULL;
+    char* rv;
+    size_t i;
+    if (argc == 0) return NULL;
+    for (i=0; i<argc; i++)
+        sargv[i] = lil_to_string(argv[i]);
+    sargv[argc] = NULL;
+    rv = do_system(argc, (char**)sargv);
+    if (rv) {
+        r = lil_alloc_string(rv);
+        free(rv);
+    }
+    free(sargv);
+    return r;
+}
+
 static int repl(void)
 {
     char buffer[16384];
     lil_t lil = lil_new();
+    lil_register(lil, "system", fnc_system);
     printf("Little Interpreted Language Interactive Shell\n");
     lil_callback(lil, LIL_CALLBACK_EXIT, (lil_callback_proc_t)do_exit);
     while (running) {
@@ -50,10 +117,10 @@ static int repl(void)
         buffer[0] = 0;
         printf("# ");
         if (!fgets(buffer, 16384, stdin)) break;
-        result = lil_parse(lil, buffer, 0, 1);
+        result = lil_parse(lil, buffer, 0, 0);
         strres = lil_to_string(result);
         if (strres[0])
-            printf(" -> %s\n", strres);
+            printf("%s\n", strres);
         lil_free_value(result);
         if (lil_error(lil, &err_msg, &pos)) {
             printf("error at %i: %s\n", (int)pos, err_msg);
@@ -73,6 +140,7 @@ static int nonint(int argc, const char* argv[])
     lil_value_t args, result;
     char* tmpcode;
     int i;
+    lil_register(lil, "system", fnc_system);
     for (i=2; i<argc; i++) {
         lil_list_append(arglist, lil_alloc_string(argv[i]));
     }

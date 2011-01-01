@@ -2040,17 +2040,18 @@ static LILCALLBACK lil_value_t fnc_write(lil_t lil, size_t argc, lil_value_t* ar
         lil_write_callback_proc_t proc = (lil_write_callback_proc_t)lil->callback[LIL_CALLBACK_WRITE];
         proc(lil, lil_to_string(msg));
     } else printf("%s", lil_to_string(msg));
-    return msg;
+    lil_free_value(msg);
+    return NULL;
 }
 
 static LILCALLBACK lil_value_t fnc_print(lil_t lil, size_t argc, lil_value_t* argv)
 {
-    lil_value_t r = fnc_write(lil, argc, argv);
+    fnc_write(lil, argc, argv);
     if (lil->callback[LIL_CALLBACK_WRITE]) {
         lil_write_callback_proc_t proc = (lil_write_callback_proc_t)lil->callback[LIL_CALLBACK_WRITE];
         proc(lil, "\n");
     } else printf("\n");
-    return r;
+    return NULL;
 }
 
 static LILCALLBACK lil_value_t fnc_eval(lil_t lil, size_t argc, lil_value_t* argv)
