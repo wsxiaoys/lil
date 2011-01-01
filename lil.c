@@ -1958,6 +1958,34 @@ static LILCALLBACK lil_value_t fnc_func(lil_t lil, size_t argc, lil_value_t* arg
     return name;
 }
 
+static LILCALLBACK lil_value_t fnc_rename(lil_t lil, size_t argc, lil_value_t* argv)
+{
+    lil_value_t r;
+    lil_func_t func;
+    const char* oldname;
+    const char* newname;
+    if (argc < 2) return NULL;
+    oldname = lil_to_string(argv[0]);
+    newname = lil_to_string(argv[1]);
+    func = find_cmd(lil, oldname);
+    if (!func) {
+        char* msg = malloc(24 + strlen(oldname));
+        sprintf(msg, "unknown function '%s'", oldname);
+        lil_set_error_at(lil, lil->head, msg);
+        free(msg);
+        return NULL;
+    }
+    r = lil_alloc_string(func->name);
+    free(func->name);
+    func->name = strclone(newname);
+    return r;
+}
+
+static LILCALLBACK lil_value_t fnc_unusedname(lil_t lil, size_t argc, lil_value_t* argv)
+{
+    return lil_unused_name(lil, argc > 0 ? lil_to_string(argv[0]) : "unusedname");
+}
+
 static LILCALLBACK lil_value_t fnc_quote(lil_t lil, size_t argc, lil_value_t* argv)
 {
     lil_value_t r;
@@ -2078,6 +2106,22 @@ static LILCALLBACK lil_value_t fnc_index(lil_t lil, size_t argc, lil_value_t* ar
         r = NULL;
     else
         r = lil_clone_value(list->v[index]);
+    lil_free_list(list);
+    return r;
+}
+
+static LILCALLBACK lil_value_t fnc_indexof(lil_t lil, size_t argc, lil_value_t* argv)
+{
+    lil_list_t list;
+    size_t index;
+    lil_value_t r = NULL;
+    if (argc < 2) return NULL;
+    list = lil_subst_to_list(lil, argv[0]);
+    for (index = 0; index < list->c; index++)
+        if (!strcmp(lil_to_string(list->v[index]), lil_to_string(argv[1]))) {
+            r = lil_alloc_integer(index);
+            break;
+        }
     lil_free_list(list);
     return r;
 }
@@ -2563,6 +2607,8 @@ static void register_stdcmds(lil_t lil)
 {
     lil_register(lil, "reflect", fnc_reflect);
     lil_register(lil, "func", fnc_func);
+    lil_register(lil, "rename", fnc_rename);
+    lil_register(lil, "unusedname", fnc_unusedname);
     lil_register(lil, "quote", fnc_quote);
     lil_register(lil, "set", fnc_set);
     lil_register(lil, "write", fnc_write);
@@ -2571,6 +2617,7 @@ static void register_stdcmds(lil_t lil)
     lil_register(lil, "jaileval", fnc_jaileval);
     lil_register(lil, "count", fnc_count);
     lil_register(lil, "index", fnc_index);
+    lil_register(lil, "indexof", fnc_indexof);
     lil_register(lil, "list", fnc_list);
     lil_register(lil, "append", fnc_append);
     lil_register(lil, "subst", fnc_subst);

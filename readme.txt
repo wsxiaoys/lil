@@ -432,6 +432,17 @@ LIL: A Little Interpreted Language
      
      func [name] [argument list | "args"] <code>
        register a new function.  See the section 2 for more information
+
+	 rename <oldname> <newname>
+	   rename an existing function.  Note that the "set" function is used to
+	   access variables using the $ prefix so if the "set" function is
+	   renamed, variables will only be accessible using the new name.  The
+	   function returns the <oldname>
+
+	 unusedname [part]
+	   return an unused function name.  This is a random name which has the
+	   form $$un$<part>$<some number>$nu$$.  The <part> is optional (if not
+	   provided "unusedname" will be used)
      
      quote [...]
        return the arguments as a single space-separated string
@@ -464,7 +475,14 @@ LIL: A Little Interpreted Language
        returns the number of items in a LIL list
      
      index <list> <index>
-       returns the <index>-th item in a LIL list
+       returns the <index>-th item in a LIL list.  The indices begin from
+       zero (so 0 is the first index, 1 is the second, etc)
+
+     indexof <list> <value>
+       returns the index of the first occurence of <value> in a LIL list.  If
+       the <value> does not exist indexof will return an empty string.  The
+       indices begin from zero (so 0 is the first index, 1 is the second,
+       etc)
      
      append ["global"] <list> <value>
        appends the <value> value to the variable containing the <list>
