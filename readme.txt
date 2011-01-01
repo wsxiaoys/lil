@@ -494,6 +494,18 @@ LIL: A Little Interpreted Language
        the <value> does not exist indexof will return an empty string.  The
        indices begin from zero (so 0 is the first index, 1 is the second,
        etc)
+
+     filter [varname] <list> <expression>
+       filters the given list by evaluating the given expression for each
+       item in the list.  If the expression equals to true (is a non-zero
+       number and a non-empty string), then the item passes the filter.
+       Otherwise the filtered list will not include the item.  For each
+       evaluation, the item's value is stored in the [varname] variable
+       (or in the "x" variable if no [varname] was given).  The function
+       returns the filtered list
+
+     list [...]
+       returns a list with the arguments as its items
      
      append ["global"] <list> <value>
        appends the <value> value to the variable containing the <list>
@@ -501,9 +513,13 @@ LIL: A Little Interpreted Language
        special word is used, the list variable is assumed to be a global
        variable
      
-     list [...]
-       returns a list with the arguments as its items
-     
+     slice <list> <from> [to]
+       returns a slice of the given list from the index <from> to the index
+       [to]-1 (that is, the [to]-th item is not includd).  The indices are
+       clamped to be within the 0..<list length> range.  If [to] is not
+       given, the slice contains all items from the <from> index up to the
+       end of the list
+
      subst [...]
        perform string substitution to the arguments.  For example the code
        

@@ -2055,7 +2055,7 @@ static LILCALLBACK lil_value_t fnc_print(lil_t lil, size_t argc, lil_value_t* ar
 
 static LILCALLBACK lil_value_t fnc_eval(lil_t lil, size_t argc, lil_value_t* argv)
 {
-    if (argc == 1) return lil_parse_value(lil, argv[0], 1);
+    if (argc == 1) return lil_parse_value(lil, argv[0], 0);
     if (argc > 1) {
         lil_value_t val = alloc_value(NULL), r;
         size_t i;
@@ -2063,7 +2063,7 @@ static LILCALLBACK lil_value_t fnc_eval(lil_t lil, size_t argc, lil_value_t* arg
             if (i) lil_append_char(val, ' ');
             lil_append_val(val, argv[i]);
         }
-        r = lil_parse_value(lil, val, 1);
+        r = lil_parse_value(lil, val, 0);
         lil_free_value(val);
         return r;
     }
@@ -2158,6 +2158,57 @@ static LILCALLBACK lil_value_t fnc_append(lil_t lil, size_t argc, lil_value_t* a
     r = lil_list_to_value(list, 1);
     lil_free_list(list);
     lil_set_var(lil, varname, r, access);
+    return r;
+}
+
+static LILCALLBACK lil_value_t fnc_slice(lil_t lil, size_t argc, lil_value_t* argv)
+{
+    lil_list_t list, slice;
+    size_t i;
+    int64_t from, to;
+    lil_value_t r;
+    if (argc < 1) return NULL;
+    if (argc < 2) return lil_clone_value(argv[0]);
+    from = lil_to_integer(argv[1]);
+    if (from < 0) from = 0;
+    list = lil_subst_to_list(lil, argv[0]);
+    to = argc > 2 ? lil_to_integer(argv[2]) : list->c;
+    if (to > list->c) to = list->c;
+    if (to < from) to = from;
+    slice = lil_alloc_list();
+    for (i=(size_t)from; i<(size_t)to; i++)
+        lil_list_append(slice, lil_clone_value(list->v[i]));
+    lil_free_list(list);
+    r = lil_list_to_value(slice, 1);
+    lil_free_list(slice);
+    return r;
+}
+
+static LILCALLBACK lil_value_t fnc_filter(lil_t lil, size_t argc, lil_value_t* argv)
+{
+    lil_list_t list, filtered;
+    size_t i;
+    lil_value_t r;
+    const char* varname = "x";
+    int base = 0;
+    if (argc < 1) return NULL;
+    if (argc < 2) return lil_clone_value(argv[0]);
+    if (argc > 2) {
+        base = 1;
+        varname = lil_to_string(argv[0]);
+    }
+    list = lil_subst_to_list(lil, argv[base]);
+    filtered = lil_alloc_list();
+    for (i=0; i<list->c; i++) {
+        lil_set_var(lil, varname, list->v[i], LIL_SETVAR_LOCAL);
+        r = lil_eval_expr(lil, argv[base + 1]);
+        if (lil_to_boolean(r))
+            lil_list_append(filtered, lil_clone_value(list->v[i]));
+        lil_free_value(r);
+    }
+    lil_free_list(list);
+    r = lil_list_to_value(filtered, 1);
+    lil_free_list(filtered);
     return r;
 }
 
@@ -2629,8 +2680,10 @@ static void register_stdcmds(lil_t lil)
     lil_register(lil, "count", fnc_count);
     lil_register(lil, "index", fnc_index);
     lil_register(lil, "indexof", fnc_indexof);
+    lil_register(lil, "filter", fnc_filter);
     lil_register(lil, "list", fnc_list);
     lil_register(lil, "append", fnc_append);
+    lil_register(lil, "slice", fnc_slice);
     lil_register(lil, "subst", fnc_subst);
     lil_register(lil, "concat", fnc_concat);
     lil_register(lil, "foreach", fnc_foreach);
