@@ -61,6 +61,8 @@ struct _lil_env_t
     struct _lil_env_t* parent;
     lil_var_t* var;
     size_t vars;
+    lil_value_t retval;
+    int breakrun;
 };
 
 struct _lil_list_t
@@ -91,8 +93,6 @@ struct _lil_t
     lil_env_t env;
     lil_env_t rootenv;
     lil_value_t empty;
-    int breakrun;
-    lil_value_t retval;
     int error;
     size_t err_head;
     char* err_msg;
@@ -270,6 +270,7 @@ lil_env_t lil_alloc_env(lil_env_t parent)
 void lil_free_env(lil_env_t env)
 {
     size_t i;
+    lil_free_value(env->retval);
     for (i=0; i<env->vars; i++) {
         free(env->var[i]->n);
         lil_free_value(env->var[i]->v);
@@ -668,7 +669,7 @@ lil_value_t lil_parse(lil_t lil, const char* code, size_t codelen, int funclevel
             }
         }
 
-        if (lil->breakrun) goto cleanup;
+        if (lil->env->breakrun) goto cleanup;
         
         skip_spaces(lil);
         while (ateol(lil)) lil->head++;
@@ -685,9 +686,9 @@ cleanup:
     lil->head = save_head;
     if (funclevel) {
         if (val) lil_free_value(val);
-        val = lil->retval;
-        lil->retval = NULL;
-        lil->breakrun = 0;
+        val = lil->env->retval;
+        lil->env->retval = NULL;
+        lil->env->breakrun = 0;
     }
     lil->parse_depth--;
     return val ? val : alloc_value(NULL);
@@ -1818,7 +1819,6 @@ void lil_free(lil_t lil)
     size_t i;
     free(lil->err_msg);
     lil_free_value(lil->empty);
-    if (lil->retval) lil_free_value(lil->retval);
     while (lil->env) {
         lil_env_t next = lil->env->parent;
         lil_free_env(lil->env);
@@ -2070,6 +2070,28 @@ static LILCALLBACK lil_value_t fnc_eval(lil_t lil, size_t argc, lil_value_t* arg
     return NULL;
 }
 
+static LILCALLBACK lil_value_t fnc_upeval(lil_t lil, size_t argc, lil_value_t* argv)
+{
+    lil_env_t thisenv = lil->env;
+    lil_value_t r;
+    if (lil->rootenv == thisenv) return fnc_eval(lil, argc, argv);
+    lil->env = thisenv->parent;
+    if (argc == 1) {
+        r = lil_parse_value(lil, argv[0], 0);
+    } else {
+        lil_value_t val = alloc_value(NULL), r;
+        size_t i;
+        for (i=0; i<argc; i++) {
+            if (i) lil_append_char(val, ' ');
+            lil_append_val(val, argv[i]);
+        }
+        r = lil_parse_value(lil, val, 0);
+        lil_free_value(val);
+    }
+    lil->env = thisenv;
+    return r;
+}
+
 static LILCALLBACK lil_value_t fnc_jaileval(lil_t lil, size_t argc, lil_value_t* argv)
 {
     size_t i;
@@ -2277,8 +2299,9 @@ static LILCALLBACK lil_value_t fnc_foreach(lil_t lil, size_t argc, lil_value_t* 
 
 static LILCALLBACK lil_value_t fnc_return(lil_t lil, size_t argc, lil_value_t* argv)
 {
-    lil->breakrun = 1;
-    lil->retval = argc < 1 ? NULL : lil_clone_value(argv[0]);
+    lil->env->breakrun = 1;
+    lil_free_value(lil->env->retval);
+    lil->env->retval = argc < 1 ? NULL : lil_clone_value(argv[0]);
     return NULL;
 }
 
@@ -2676,6 +2699,7 @@ static void register_stdcmds(lil_t lil)
     lil_register(lil, "write", fnc_write);
     lil_register(lil, "print", fnc_print);
     lil_register(lil, "eval", fnc_eval);
+    lil_register(lil, "upeval", fnc_upeval);
     lil_register(lil, "jaileval", fnc_jaileval);
     lil_register(lil, "count", fnc_count);
     lil_register(lil, "index", fnc_index);

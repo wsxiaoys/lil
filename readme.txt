@@ -475,6 +475,17 @@ LIL: A Little Interpreted Language
      eval [...]
        combines the arguments to a single string and evaluates it as LIL
        code.  The function returns the result of the LIL code
+
+     upeval [...]
+       combines the arguments to a single string and evaluates it as LIL
+       code in the environment above the current environment (the parent
+       environment).  For functions this is usually the function caller's
+       environment.  This can be used to access local variables (for read
+       and write purposes) of a function's caller or to affect its flow
+       (like causing a caller function to return).  The function can be
+       used to provide most of the functionality that other languages
+       provide via the use of macros but at the program's runtime and with
+       full access to the program's state
        
      jaileval ["clean"] <code>
        the <code> will be executed in its own LIL environment.  Unless
