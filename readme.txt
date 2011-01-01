@@ -486,7 +486,12 @@ LIL: A Little Interpreted Language
        used to provide most of the functionality that other languages
        provide via the use of macros but at the program's runtime and with
        full access to the program's state
-       
+     
+     downeval [...]
+       downeval complements upeval. It works like eval, but the code is
+       evaluated in the environment where the most recent call to upeval was
+       made
+
      jaileval ["clean"] <code>
        the <code> will be executed in its own LIL environment.  Unless
        "clean" is specified, the new LIL environment will get a copy of the

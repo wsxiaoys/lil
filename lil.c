@@ -92,6 +92,7 @@ struct _lil_t
     char* dollarprefix;
     lil_env_t env;
     lil_env_t rootenv;
+    lil_env_t downenv;
     lil_value_t empty;
     int error;
     size_t err_head;
@@ -2074,22 +2075,28 @@ static LILCALLBACK lil_value_t fnc_eval(lil_t lil, size_t argc, lil_value_t* arg
 static LILCALLBACK lil_value_t fnc_upeval(lil_t lil, size_t argc, lil_value_t* argv)
 {
     lil_env_t thisenv = lil->env;
+    lil_env_t thisdownenv = lil->downenv;
     lil_value_t r;
     if (lil->rootenv == thisenv) return fnc_eval(lil, argc, argv);
     lil->env = thisenv->parent;
-    if (argc == 1) {
-        r = lil_parse_value(lil, argv[0], 0);
-    } else {
-        lil_value_t val = alloc_value(NULL), r;
-        size_t i;
-        for (i=0; i<argc; i++) {
-            if (i) lil_append_char(val, ' ');
-            lil_append_val(val, argv[i]);
-        }
-        r = lil_parse_value(lil, val, 0);
-        lil_free_value(val);
-    }
+    lil->downenv = thisenv;
+    r = fnc_eval(lil, argc, argv);
     lil->env = thisenv;
+    lil->downenv = thisdownenv;
+    return r;
+}
+
+static LILCALLBACK lil_value_t fnc_downeval(lil_t lil, size_t argc, lil_value_t* argv)
+{
+    lil_value_t r;
+    lil_env_t upenv = lil->env;
+    lil_env_t downenv = lil->downenv;
+    if (!downenv) return fnc_eval(lil, argc, argv);
+    lil->downenv = NULL;
+    lil->env = downenv;
+    r = fnc_eval(lil, argc, argv);
+    lil->downenv = downenv;
+    lil->env = upenv;
     return r;
 }
 
@@ -2701,6 +2708,7 @@ static void register_stdcmds(lil_t lil)
     lil_register(lil, "print", fnc_print);
     lil_register(lil, "eval", fnc_eval);
     lil_register(lil, "upeval", fnc_upeval);
+    lil_register(lil, "downeval", fnc_downeval);
     lil_register(lil, "jaileval", fnc_jaileval);
     lil_register(lil, "count", fnc_count);
     lil_register(lil, "index", fnc_index);
