@@ -440,6 +440,17 @@ LIL: A Little Interpreted Language
        prefix and the whole is executed.  The default dollar prefix is 'set '
        (notice the space which will separate the call to "set" from the word
        following)
+
+     reflect this
+       returns the code of the current local environment.  This will return
+       the currently executed function's body, the current root (top-level)
+       code or the current catcher code (if the current environment is a
+       catcher environment)
+
+     reflect name
+       returns the name of the currently executed function or an empty string
+       if the code is executed at root level (or the name of the current
+       function is unknown)
      
      func [name] [argument list | "args"] <code>
        register a new function.  See the section 2 for more information

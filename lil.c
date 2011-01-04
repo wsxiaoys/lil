@@ -59,6 +59,8 @@ struct _lil_var_t
 struct _lil_env_t
 {
     struct _lil_env_t* parent;
+    lil_func_t func;
+    lil_value_t catcher_for;
     lil_var_t* var;
     size_t vars;
     lil_value_t retval;
@@ -82,6 +84,7 @@ struct _lil_func_t
 struct _lil_t
 {
     const char* code; /* need save on parse */
+    const char* rootcode;
     size_t clen; /* need save on parse */
     size_t head; /* need save on parse */
     lil_func_t* cmd;
@@ -600,6 +603,7 @@ lil_value_t lil_parse(lil_t lil, const char* code, size_t codelen, int funclevel
     size_t save_head = lil->head;
     lil_value_t val = NULL;
     lil_list_t words = NULL;
+    if (!save_code) lil->rootcode = code;
     lil->code = code;
     lil->clen = codelen ? codelen : strlen(code);
     lil->head = 0;
@@ -622,6 +626,7 @@ lil_value_t lil_parse(lil_t lil, const char* code, size_t codelen, int funclevel
                         if (lil->in_catcher < MAX_CATCHER_DEPTH) {
                             lil->in_catcher++;
                             lil_push_env(lil);
+                            lil->env->catcher_for = words->v[0];
                             lil_value_t args = lil_list_to_value(words, 1);
                             lil_set_var(lil, "args", args, LIL_SETVAR_LOCAL_NEW);
                             lil_free_value(args);
@@ -654,6 +659,7 @@ lil_value_t lil_parse(lil_t lil, const char* code, size_t codelen, int funclevel
                     }
                 } else {
                     lil_push_env(lil);
+                    lil->env->func = cmd;
                     if (cmd->argnames->c == 1 && !strcmp(lil_to_string(cmd->argnames->v[0]), "args")) {
                         lil_value_t args = lil_list_to_value(words, 1);
                         lil_set_var(lil, "args", args, LIL_SETVAR_LOCAL_NEW);
@@ -1940,6 +1946,20 @@ static LILCALLBACK lil_value_t fnc_reflect(lil_t lil, size_t argc, lil_value_t* 
         free(lil->dollarprefix);
         lil->dollarprefix = strclone(lil_to_string(argv[1]));
         return r;
+    }
+    if (!strcmp(type, "this")) {
+        lil_env_t env = lil->env;
+        while (env != lil->rootenv && !env->catcher_for && !env->func) env = env->parent;
+        if (env->catcher_for) return lil_alloc_string(lil->catcher);
+        if (env == lil->rootenv) return lil_alloc_string(lil->rootcode);
+        return env->func ? env->func->code : NULL;
+    }
+    if (!strcmp(type, "name")) {
+        lil_env_t env = lil->env;
+        while (env != lil->rootenv && !env->catcher_for && !env->func) env = env->parent;
+        if (env->catcher_for) return env->catcher_for;
+        if (env == lil->rootenv) return NULL;
+        return env->func ? lil_alloc_string(env->func->name) : NULL;
     }
     return NULL;
 }
