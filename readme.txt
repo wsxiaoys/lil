@@ -662,7 +662,21 @@ LIL: A Little Interpreted Language
      
      length [...]
        the function will return the sum of the length of all arguments
-     
+
+     trim <str> [characters]
+       removes any of the [characters] from the beginning and ending of a
+       string until there are no more such characters.  If the [characters]
+       argument is not given, the whitespace characters (space, linefeed,
+       newline, carriage return, horizontal tab and vertical tab) are used
+
+     ltrim <str> [characters]
+       like "trim" but removes only the characters from the left side of the
+       string (the beginning)
+
+     rtrim <str> [characters]
+       like "trim" but removes only the characters from the right side of the
+       string (the ending)
+
      strcmp <a> <b>
        compares the string <a> and <b> - if <a> is lesser than <b> a
        negative value will be returned, if <a> is greater a positive an
@@ -679,7 +693,9 @@ LIL: A Little Interpreted Language
      split <str> [sep]
        split the given string in substrings using [sep] as a separator and
        return a list with the substrings.  If [sep] is not given, the space
-       is used as the separator
+       is used as the separator.  If [sep] contains more than one characters,
+       all of them are considered as separators (ie. if ", " is given, the
+       string will be splitted in both spaces and commas)
      
      try <code> [handler]
        evaluates the code in <code> normally and returns its result.  If an

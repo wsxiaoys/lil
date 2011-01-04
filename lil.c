@@ -2531,6 +2531,45 @@ static LILCALLBACK lil_value_t fnc_length(lil_t lil, size_t argc, lil_value_t* a
     return lil_alloc_integer((int64_t)total);
 }
 
+static lil_value_t real_trim(const char* str, const char* chars, int left, int right)
+{
+    int base = 0;
+    lil_value_t r = NULL;
+    if (left) {
+        while (str[base] && strchr(chars, str[base])) base++;
+        if (!right) r = lil_alloc_string(str[base] ? str + base : NULL);
+    }
+    if (right) {
+        size_t len;
+        char* s;
+        s = strclone(str + base);
+        len = strlen(s);
+        while (len && strchr(chars, s[len - 1])) len--;
+        s[len] = 0;
+        r = lil_alloc_string(s);
+        free(s);
+    }
+    return r;
+}
+
+static LILCALLBACK lil_value_t fnc_trim(lil_t lil, size_t argc, lil_value_t* argv)
+{
+    if (!argc) return NULL;
+    return real_trim(lil_to_string(argv[0]), argc < 2 ? " \f\n\r\t\v" : lil_to_string(argv[1]), 1, 1);
+}
+
+static LILCALLBACK lil_value_t fnc_ltrim(lil_t lil, size_t argc, lil_value_t* argv)
+{
+    if (!argc) return NULL;
+    return real_trim(lil_to_string(argv[0]), argc < 2 ? " \f\n\r\t\v" : lil_to_string(argv[1]), 1, 0);
+}
+
+static LILCALLBACK lil_value_t fnc_rtrim(lil_t lil, size_t argc, lil_value_t* argv)
+{
+    if (!argc) return NULL;
+    return real_trim(lil_to_string(argv[0]), argc < 2 ? " \f\n\r\t\v" : lil_to_string(argv[1]), 0, 1);
+}
+
 static LILCALLBACK lil_value_t fnc_strcmp(lil_t lil, size_t argc, lil_value_t* argv)
 {
     if (argc < 2) return NULL;
@@ -2582,20 +2621,20 @@ static LILCALLBACK lil_value_t fnc_repstr(lil_t lil, size_t argc, lil_value_t* a
 static LILCALLBACK lil_value_t fnc_split(lil_t lil, size_t argc, lil_value_t* argv)
 {
     lil_list_t list;
-    char sep = ' ';
+    const char* sep = " ";
     size_t i;
     lil_value_t val;
     const char* str;
     if (argc == 0) return NULL;
     if (argc > 1) {
-        sep = lil_to_string(argv[1])[0];
+        sep = lil_to_string(argv[1]);
         if (!sep) return lil_clone_value(argv[0]);
     }
     val = lil_alloc_string("");
     str = lil_to_string(argv[0]);
     list = lil_alloc_list();
     for (i=0; str[i]; i++) {
-        if (str[i] == sep) {
+        if (strchr(sep, str[i])) {
             lil_list_append(list, val);
             val = lil_alloc_string("");
         } else {
@@ -2734,6 +2773,9 @@ static void register_stdcmds(lil_t lil)
     lil_register(lil, "substr", fnc_substr);
     lil_register(lil, "strpos", fnc_strpos);
     lil_register(lil, "length", fnc_length);
+    lil_register(lil, "trim", fnc_trim);
+    lil_register(lil, "ltrim", fnc_ltrim);
+    lil_register(lil, "rtrim", fnc_rtrim);
     lil_register(lil, "strcmp", fnc_strcmp);
     lil_register(lil, "streq", fnc_streq);
     lil_register(lil, "repstr", fnc_repstr);
