@@ -493,10 +493,10 @@ LIL: A Little Interpreted Language
        made
 
      jaileval ["clean"] <code>
-       the <code> will be executed in its own LIL environment.  Unless
-       "clean" is specified, the new LIL environment will get a copy of the
-       currently registered native functions.  The <code> can use "return" to
-       return a value (which is returned by jaileval)
+       the <code> will be executed in its own LIL runtime.  Unless "clean"
+       is specified, the new LIL runtime will get a copy of the currently
+       registered native functions.  The <code> can use "return" to return
+       a value (which is returned by jaileval)
      
      count <list>
        returns the number of items in a LIL list
