@@ -1757,7 +1757,7 @@ lil_value_t lil_unused_name(lil_t lil, const char* part)
     lil_value_t val;
     size_t i;
     for (i=0; i<(size_t)-1; i++) {
-        sprintf(name, "$$un$%s$%09u$nu$$", part, (unsigned int)i);
+        sprintf(name, "!!un!%s!%09u!nu!!", part, (unsigned int)i);
         if (find_cmd(lil, name)) continue;
         if (lil_find_var(lil, lil->env, name)) continue;
         val = lil_alloc_string(name);

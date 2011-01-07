@@ -463,7 +463,7 @@ LIL: A Little Interpreted Language
 
      unusedname [part]
        return an unused function name.  This is a random name which has the
-       form $$un$[part]$<some number>$nu$$.  The [part] is optional (if not
+       form !!un![part]!<some number>!nu!!.  The [part] is optional (if not
        provided "unusedname" will be used)
      
      quote [...]
