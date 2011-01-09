@@ -83,6 +83,13 @@ static char* do_system(size_t argc, char** argv)
     #endif
 }
 
+static LILCALLBACK lil_value_t fnc_writechar(lil_t lil, size_t argc, lil_value_t* argv)
+{
+    if (!argc) return NULL;
+    printf("%c", (char)lil_to_integer(argv[0]));
+    return NULL;
+}
+
 static LILCALLBACK lil_value_t fnc_system(lil_t lil, size_t argc, lil_value_t* argv)
 {
     const char** sargv = malloc(sizeof(char*)*(argc + 1));
@@ -106,6 +113,7 @@ static int repl(void)
 {
     char buffer[16384];
     lil_t lil = lil_new();
+    lil_register(lil, "writechar", fnc_writechar);
     lil_register(lil, "system", fnc_system);
     printf("Little Interpreted Language Interactive Shell\n");
     lil_callback(lil, LIL_CALLBACK_EXIT, (lil_callback_proc_t)do_exit);
@@ -140,6 +148,7 @@ static int nonint(int argc, const char* argv[])
     lil_value_t args, result;
     char* tmpcode;
     int i;
+    lil_register(lil, "writechar", fnc_writechar);
     lil_register(lil, "system", fnc_system);
     for (i=2; i<argc; i++) {
         lil_list_append(arglist, lil_alloc_string(argv[i]));
