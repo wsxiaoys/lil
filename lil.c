@@ -797,9 +797,11 @@ static void ee_element(expreval_t* ee)
 
 static void ee_paren(expreval_t* ee)
 {
+    ee_skip_spaces(ee);
     if (ee->code[ee->head] == '(') {
         ee->head++;
         ee_expr(ee);
+        ee_skip_spaces(ee);
         if (ee->code[ee->head] == ')') ee->head++;
         else ee->error = EERR_SYNTAX_ERROR;
     } else ee_element(ee);
@@ -1073,6 +1075,8 @@ static void ee_muldiv(expreval_t* ee)
             }
             break;
         }
+        
+        ee_skip_spaces(ee);
     }
 }
 
@@ -1164,6 +1168,8 @@ static void ee_addsub(expreval_t* ee)
             }
             break;
         }
+        
+        ee_skip_spaces(ee);
     }
 }
 
@@ -1256,6 +1262,8 @@ static void ee_shift(expreval_t* ee)
             }
             break;
         }
+        
+        ee_skip_spaces(ee);
     }
 }
 
@@ -1423,6 +1431,8 @@ static void ee_compare(expreval_t* ee)
             }
             break;
         }
+        
+        ee_skip_spaces(ee);
     }
 }
 
@@ -1512,6 +1522,8 @@ static void ee_equals(expreval_t* ee)
             }
             break;
         }
+        
+        ee_skip_spaces(ee);
     }
 }
 
@@ -1559,6 +1571,8 @@ static void ee_bitand(expreval_t* ee)
         default:
             ee->error = EERR_INVALID_TYPE;
         }
+        
+        ee_skip_spaces(ee);
     }
 }
 
@@ -1606,6 +1620,8 @@ static void ee_bitor(expreval_t* ee)
         default:
             ee->error = EERR_INVALID_TYPE;
         }
+        
+        ee_skip_spaces(ee);
     }
 }
 
@@ -1653,6 +1669,8 @@ static void ee_logand(expreval_t* ee)
         default:
             ee->error = EERR_INVALID_TYPE;
         }
+        
+        ee_skip_spaces(ee);
     }
 }
 
@@ -1700,6 +1718,8 @@ static void ee_logor(expreval_t* ee)
         default:
             ee->error = EERR_INVALID_TYPE;
         }
+        
+        ee_skip_spaces(ee);
     }
 }
 
