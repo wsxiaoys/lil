@@ -649,6 +649,12 @@ LIL: A Little Interpreted Language
        code in <code> will be evaluated followed by the code in <step>.  The
        function returns the result of the last evaluation of <code>
      
+     char <code>
+       returns the character with the given code as a string.  Note that the
+       character 0 cannot be used in the current implementation of LIL since
+       it depends on 0-terminated strings.  If 0 is passed, an empty string
+       will be returned instead
+     
      charat <str> <index>
        returns the character at the given index of the given string.  The index
        begins with 0.  If an invalid index is given, an empty value will be

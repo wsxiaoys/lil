@@ -2481,6 +2481,16 @@ static LILCALLBACK lil_value_t fnc_for(lil_t lil, size_t argc, lil_value_t* argv
     return r;
 }
 
+
+static LILCALLBACK lil_value_t fnc_char(lil_t lil, size_t argc, lil_value_t* argv)
+{
+    char s[2];
+    if (!argc) return NULL;
+    s[0] = (char)lil_to_integer(argv[0]);
+    s[1] = 0;
+    return lil_alloc_string(s);
+}
+
 static LILCALLBACK lil_value_t fnc_charat(lil_t lil, size_t argc, lil_value_t* argv)
 {
     size_t index;
@@ -2788,6 +2798,7 @@ static void register_stdcmds(lil_t lil)
     lil_register(lil, "if", fnc_if);
     lil_register(lil, "while", fnc_while);
     lil_register(lil, "for", fnc_for);
+    lil_register(lil, "char", fnc_char);
     lil_register(lil, "charat", fnc_charat);
     lil_register(lil, "codeat", fnc_codeat);
     lil_register(lil, "substr", fnc_substr);
