@@ -218,6 +218,7 @@ lil_list_t lil_alloc_list(void)
 void lil_free_list(lil_list_t list)
 {
     size_t i;
+    if (!list) return;
     for (i=0; i<list->c; i++) lil_free_value(list->v[i]);
     free(list->v);
     free(list);
@@ -274,6 +275,7 @@ lil_env_t lil_alloc_env(lil_env_t parent)
 void lil_free_env(lil_env_t env)
 {
     size_t i;
+    if (!env) return;
     lil_free_value(env->retval);
     for (i=0; i<env->vars; i++) {
         free(env->var[i]->n);
@@ -1844,6 +1846,7 @@ lil_value_t lil_alloc_integer(int64_t num)
 void lil_free(lil_t lil)
 {
     size_t i;
+    if (!lil) return;
     free(lil->err_msg);
     lil_free_value(lil->empty);
     while (lil->env) {
