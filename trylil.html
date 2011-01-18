@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style type="text/css">
+html {
+    background: #607080;
+    width: 100%;
+    height: 100%;
+    font-family: sans-serif;
+}
+body {
+    height: 100%;
+    width: 600px;
+    border-left: 1px solid #404040;
+    border-right: 1px solid #404040;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 0px;
+    margin-bottom: 0px;
+    background: #F0F0F0;
+    padding-left: 15px;
+    padding-right: 15px;
+    padding-top: 0px;
+    padding-bottom: 0px;
+}
+h1 {
+    font-size: 30px;
+    margin: 0px;
+    padding: 0px;
+    background: #C0D0E0;
+    margin-bottom: 15px;
+    margin-left: -15px;
+    width: 615px;
+    padding-left: 15px;
+    color: #304050;
+    border-bottom: 1px solid #8090A0;
+}
+input,div {
+    background: #304050;
+    color: #FFFFFF;
+    display: block;
+    width: 100%;
+    font-family: monospace;
+    font-size: 15px;
+    border: 1px solid #001020;
+}
+div {
+    overflow: auto;
+    height: 300px;
+    margin-bottom: 5px;
+}
+#info {
+    display: block;
+    font-size: 75%;
+    text-align: center;
+    margin-top: 20px;
+    color: gray;
+}
+#hint {
+    padding: 5px;
+    display: block;
+    background: #E0E0E0;
+    border: 1px solid #C0C0C0;
+}
+a {
+    color: #405060;
+    text-decoration: none;
+}
+</style>
+</head>
+<body>
+<h1>LIL in the browser</h1>
+<script src="lilc.js" type="text/javascript"></script>
+<script type="text/javascript">
+var inp;
+var lil;
+
+function _atoll(a)
+{
+    return parseInt(Pointer_stringify(a));
+}
+
+function _atof(a)
+{
+    return parseFloat(Pointer_stringify(a));
+}
+
+function _rand()
+{
+    return (Math.rand()*65536)>>0;
+}
+
+function print(msg)
+{
+    var scr = document.getElementById("scr");
+    scr.innerHTML += msg + "<br>";
+    scr.scrollTop += 1024;
+}
+
+function evalil(code)
+{
+    var result = _lil_parse(lil, Pointer_make(intArrayFromString(code)), 0, 0);
+    _liljs_error_check(lil);
+    var restr = Pointer_stringify(_lil_to_string(result));
+    if (restr != "") print(restr);
+    _lil_free_value(result);
+}
+</script>
+<div id="scr"></div>
+<input id="inp">
+<script type="text/javascript">
+inp = document.getElementById("inp");
+inp.onkeydown = function(e) {
+    if (!e) e = window.event;
+    if (e.keyCode == 13) {
+        print("> " + inp.value);
+        evalil(inp.value);
+        inp.value = '';
+    }
+}
+inp.focus();
+
+lil = _lil_new();
+
+evalil("print Using LIL version [reflect version]");
+</script>
+<p id="hint">Some code to try:<br>
+<tt>print hello</tt><br><br>
+<tt>func foo args { print arguments: [slice $args 1] }<br>
+foo bar blah</tt>
+</p>
+<span id="info">The C version of <a href="https://github.com/badsector/lil">LIL</a> was compiled to JavaScript using <a href="http://code.google.com/p/emscripten/">Emscripten</a> and compressed using <a href="http://code.google.com/closure/compiler/">Closure</a></info>
+</body>
+</html>
+
