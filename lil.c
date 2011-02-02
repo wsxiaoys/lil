@@ -2327,7 +2327,7 @@ static LILCALLBACK lil_value_t fnc_foreach(lil_t lil, size_t argc, lil_value_t* 
     size_t i, listidx = 0, codeidx = 1;
     const char* varname = "i";
     if (argc < 2) return NULL;
-    if (argc == 3) {
+    if (argc >= 3) {
         varname = lil_to_string(argv[0]);
         listidx = 1;
         codeidx = 2;
