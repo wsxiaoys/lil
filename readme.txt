@@ -712,8 +712,7 @@ LIL: A Little Interpreted Language
        return a list with the substrings.  If [sep] is not given, the space
        is used as the separator.  If [sep] contains more than one characters,
        all of them are considered as separators (ie. if ", " is given, the
-       string will be splitted in both spaces and commas).  If [sep] is an
-       empty string, the <str> string is returned as-is
+       string will be splitted in both spaces and commas)
      
      try <code> [handler]
        evaluates the code in <code> normally and returns its result.  If an
