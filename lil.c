@@ -2681,7 +2681,7 @@ static LILCALLBACK lil_value_t fnc_split(lil_t lil, size_t argc, lil_value_t* ar
     if (argc == 0) return NULL;
     if (argc > 1) {
         sep = lil_to_string(argv[1]);
-        if (!sep) return lil_clone_value(argv[0]);
+        if (!sep || !sep[0]) return lil_clone_value(argv[0]);
     }
     val = lil_alloc_string("");
     str = lil_to_string(argv[0]);
