@@ -2245,8 +2245,8 @@ static LILCALLBACK lil_value_t fnc_slice(lil_t lil, size_t argc, lil_value_t* ar
     from = lil_to_integer(argv[1]);
     if (from < 0) from = 0;
     list = lil_subst_to_list(lil, argv[0]);
-    to = argc > 2 ? lil_to_integer(argv[2]) : list->c;
-    if (to > list->c) to = list->c;
+    to = argc > 2 ? lil_to_integer(argv[2]) : (int64_t)list->c;
+    if (to > (int64_t)list->c) to = list->c;
     if (to < from) to = from;
     slice = lil_alloc_list();
     for (i=(size_t)from; i<(size_t)to; i++)
