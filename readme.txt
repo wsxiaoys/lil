@@ -250,7 +250,8 @@ LIL: A Little Interpreted Language
  the string "print $a $b".  The argument list is a LIL list (a space
  separated list of words using similar rules as the separation of words for
  commands - which in turn can include other sublists but escaping their
- words, etc) where each word in the list specifies an argument and the code
+ words, etc - with the exception that a LIL list value can include newline
+ characters) where each word in the list specifies an argument and the code
  is the code that will be executed when the function is evaluated.  Before
  LIL evaluates a function, it stores in local variables with the same name
  as those specified in the argument list the arguments passed to the
