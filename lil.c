@@ -87,6 +87,7 @@ struct _lil_t
     const char* rootcode;
     size_t clen; /* need save on parse */
     size_t head; /* need save on parse */
+    int ignoreeol;
     lil_func_t* cmd;
     size_t cmds;
     size_t syscmds;
@@ -428,7 +429,7 @@ static int islilspecial(char ch)
 
 static int ateol(lil_t lil)
 {
-    return lil->code[lil->head] == '\n' || lil->code[lil->head] == '\r' || lil->code[lil->head] == ';';
+    return !(lil->ignoreeol) && (lil->code[lil->head] == '\n' || lil->code[lil->head] == '\r' || lil->code[lil->head] == ';');
 }
 
 static void skip_spaces(lil_t lil)
@@ -577,14 +578,17 @@ lil_list_t lil_subst_to_list(lil_t lil, lil_value_t code)
     const char* save_code = lil->code;
     size_t save_clen = lil->clen;
     size_t save_head = lil->head;
+    int save_igeol = lil->ignoreeol;
     lil_list_t words;
     lil->code = lil_to_string(code);
     lil->clen = code->l;
     lil->head = 0;
+    lil->ignoreeol = 1;
     words = substitute(lil);
     lil->code = save_code;
     lil->clen = save_clen;
     lil->head = save_head;
+    lil->ignoreeol = save_igeol;
     return words;
 }
 
