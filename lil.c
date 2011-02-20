@@ -434,7 +434,7 @@ static int ateol(lil_t lil)
 
 static void skip_spaces(lil_t lil)
 {
-    while (lil->head < lil->clen && (lil->code[lil->head] == '\\' || lil->code[lil->head] == '#' || (isspace(lil->code[lil->head]) && !(lil->code[lil->head] == '\r' || lil->code[lil->head] == '\n')))) {
+    while (lil->head < lil->clen && (lil->code[lil->head] == '\\' || lil->code[lil->head] == '#' || (isspace(lil->code[lil->head]) && (lil->ignoreeol || !(lil->code[lil->head] == '\r' || lil->code[lil->head] == '\n'))))) {
         if (lil->code[lil->head] == '#') {
             while (lil->head < lil->clen && !ateol(lil)) lil->head++;
         } else if (lil->code[lil->head] == '\\' && (lil->code[lil->head + 1] == '\r' || lil->code[lil->head + 1] == '\n')) {
