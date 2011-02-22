@@ -1,6 +1,9 @@
 #
 # A test for sm.lil
 #
+# The following article explains the ideas behind this code:
+# http://badsector.posterous.com/a-flexible-and-simple-script-driven-state-mac
+#
 
 source sm.lil
 

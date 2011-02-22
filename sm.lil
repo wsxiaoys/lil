@@ -2,6 +2,11 @@
 # A simple state machine implementation in LIL. The implementation uses LIL's
 # reflection to check for state changes and possible transitions.
 #
+# The following article explains the ideas behind this code:
+# http://badsector.posterous.com/a-flexible-and-simple-script-driven-state-mac
+#
+# See also robot.lil for using these functions
+#
 
 # creates a new state machine
 func sm:new {type obj init} {
