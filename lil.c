@@ -630,10 +630,11 @@ lil_value_t lil_parse(lil_t lil, const char* code, size_t codelen, int funclevel
                 if (words->v[0]->l) {
                     if (lil->catcher) {
                         if (lil->in_catcher < MAX_CATCHER_DEPTH) {
+                            lil_value_t args;
                             lil->in_catcher++;
                             lil_push_env(lil);
                             lil->env->catcher_for = words->v[0];
-                            lil_value_t args = lil_list_to_value(words, 1);
+                            args = lil_list_to_value(words, 1);
                             lil_set_var(lil, "args", args, LIL_SETVAR_LOCAL_NEW);
                             lil_free_value(args);
                             val = lil_parse(lil, lil->catcher, 0, 1);
