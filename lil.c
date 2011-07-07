@@ -817,7 +817,7 @@ static void ee_paren(expreval_t* ee)
 static void ee_unary(expreval_t* ee)
 {
     ee_skip_spaces(ee);
-    if (ee->head < ee->len && !ee->error && !ispunct(ee->code[ee->head + 1]) &&
+    if (ee->head < ee->len && !ee->error &&
         (ee->code[ee->head] == '-' ||
          ee->code[ee->head] == '+' ||
          ee->code[ee->head] == '~' ||
