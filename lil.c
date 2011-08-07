@@ -1749,7 +1749,10 @@ lil_value_t lil_eval_expr(lil_t lil, lil_value_t code)
     ee.code = lil_to_string(code);
     /* an empty expression equals to 0 so that it can be used as a false value
      * in conditionals */
-    if (!ee.code[0]) return lil_alloc_integer(0);
+    if (!ee.code[0]) {
+        lil_free_value(code);
+        return lil_alloc_integer(0);
+    }
     ee.head = 0;
     ee.len = code->l;
     ee.ival = 0;
