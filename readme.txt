@@ -476,6 +476,13 @@ LIL: A Little Interpreted Language
        the same name as the last argument.  Otherwise an empty value is
        returned.  See section 2 for details
      
+     local [...]
+       make each variable defined in the arguments a local one.  If the
+       variable is already defined in the local environment, nothing is done.
+       Otherwise a new local variable will be introduced.  This is useful
+       for reusable functions that want to make sure they will not modify
+       existing global variables
+
      write [...]
        write the arguments separated by spaces to the program output.  By
        default this is the standard output but a program can override this
@@ -487,6 +494,12 @@ LIL: A Little Interpreted Language
      eval [...]
        combines the arguments to a single string and evaluates it as LIL
        code.  The function returns the result of the LIL code
+
+     topeval [...]
+       combines the arguments to a single string and evaluates it as LIL
+       code in the topmost (global) environment.  This can be used to execute
+       code outside of any function's environment that affects the global
+       one
 
      upeval [...]
        combines the arguments to a single string and evaluates it as LIL
@@ -502,7 +515,7 @@ LIL: A Little Interpreted Language
      downeval [...]
        downeval complements upeval. It works like eval, but the code is
        evaluated in the environment where the most recent call to upeval was
-       made
+       made.  This also works with topeval
 
      jaileval ["clean"] <code>
        the <code> will be executed in its own LIL runtime.  Unless "clean"

@@ -287,7 +287,7 @@ void lil_free_env(lil_env_t env)
     free(env);
 }
 
-static lil_var_t lil_find_var(lil_t lil, lil_env_t env, const char* name)
+static lil_var_t lil_find_local_var(lil_t lil, lil_env_t env, const char* name)
 {
     if (env->vars > 0) {
         size_t i = env->vars - 1;
@@ -297,8 +297,13 @@ static lil_var_t lil_find_var(lil_t lil, lil_env_t env, const char* name)
             i--;
         }
     }
+    return NULL;
+}
 
-    return env == lil->rootenv ? NULL : lil_find_var(lil, lil->rootenv, name);
+static lil_var_t lil_find_var(lil_t lil, lil_env_t env, const char* name)
+{
+    lil_var_t r = lil_find_local_var(lil, env, name);
+    return r ? r : (env == lil->rootenv ? NULL : lil_find_var(lil, lil->rootenv, name));
 }
 
 static lil_func_t find_cmd(lil_t lil, const char* name)
@@ -2080,6 +2085,17 @@ static LILCALLBACK lil_value_t fnc_set(lil_t lil, size_t argc, lil_value_t* argv
     return var ? lil_clone_value(var->v) : NULL;
 }
 
+static LILCALLBACK lil_value_t fnc_local(lil_t lil, size_t argc, lil_value_t* argv)
+{
+    size_t i;
+    for (i=0; i<argc; i++) {
+        const char* varname = lil_to_string(argv[i]);
+        if (!lil_find_local_var(lil, lil->env, varname))
+            lil_set_var(lil, varname, lil->empty, LIL_SETVAR_LOCAL_NEW);
+    }
+    return NULL;
+}
+
 static LILCALLBACK lil_value_t fnc_write(lil_t lil, size_t argc, lil_value_t* argv)
 {
     size_t i;
@@ -2121,6 +2137,19 @@ static LILCALLBACK lil_value_t fnc_eval(lil_t lil, size_t argc, lil_value_t* arg
         return r;
     }
     return NULL;
+}
+
+static LILCALLBACK lil_value_t fnc_topeval(lil_t lil, size_t argc, lil_value_t* argv)
+{
+    lil_env_t thisenv = lil->env;
+    lil_env_t thisdownenv = lil->downenv;
+    lil_value_t r;
+    lil->env = lil->rootenv;
+    lil->downenv = thisenv;
+    r = fnc_eval(lil, argc, argv);
+    lil->downenv = thisdownenv;
+    lil->env = thisenv;
+    return r;
 }
 
 static LILCALLBACK lil_value_t fnc_upeval(lil_t lil, size_t argc, lil_value_t* argv)
@@ -2804,9 +2833,11 @@ static void register_stdcmds(lil_t lil)
     lil_register(lil, "unusedname", fnc_unusedname);
     lil_register(lil, "quote", fnc_quote);
     lil_register(lil, "set", fnc_set);
+    lil_register(lil, "local", fnc_local);
     lil_register(lil, "write", fnc_write);
     lil_register(lil, "print", fnc_print);
     lil_register(lil, "eval", fnc_eval);
+    lil_register(lil, "topeval", fnc_topeval);
     lil_register(lil, "upeval", fnc_upeval);
     lil_register(lil, "downeval", fnc_downeval);
     lil_register(lil, "jaileval", fnc_jaileval);
