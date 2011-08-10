@@ -352,7 +352,7 @@ lil_var_t lil_set_var(lil_t lil, const char* name, lil_value_t val, int local)
     int freeval = 0;
     if (!name[0]) return NULL;
     if (local != LIL_SETVAR_LOCAL_NEW) {
-        lil_var_t var = lil_find_var(lil, lil->env, name);
+        lil_var_t var = lil_find_var(lil, env, name);
         if (((!var && env == lil->rootenv) || (var && var->env == lil->rootenv)) && lil->callback[LIL_CALLBACK_SETVAR]) {
             lil_setvar_callback_proc_t proc = (lil_setvar_callback_proc_t)lil->callback[LIL_CALLBACK_SETVAR];
             lil_value_t newval = val;
@@ -2180,6 +2180,65 @@ static LILCALLBACK lil_value_t fnc_downeval(lil_t lil, size_t argc, lil_value_t*
     return r;
 }
 
+static LILCALLBACK lil_value_t fnc_enveval(lil_t lil, size_t argc, lil_value_t* argv)
+{
+    lil_value_t r;
+    lil_list_t invars = NULL;
+    lil_list_t outvars = NULL;
+    lil_value_t* varvalues = NULL;
+    int codeindex;
+    size_t i;
+    if (argc < 1) return NULL;
+    if (argc == 1) codeindex = 0;
+    else if (argc >= 2) {
+        invars = lil_subst_to_list(lil, argv[0]);
+        varvalues = malloc(sizeof(lil_value_t)*lil_list_size(invars));
+        for (i=0; i<lil_list_size(invars); i++)
+            varvalues[i] = lil_clone_value(lil_get_var(lil, lil_to_string(lil_list_get(invars, i))));
+        if (argc > 2) {
+            codeindex = 2;
+            outvars = lil_subst_to_list(lil, argv[1]);
+        } else {
+            codeindex = 1;
+        }
+    }
+    lil_push_env(lil);
+    if (invars) {
+        for (i=0; i<lil_list_size(invars); i++) {
+            lil_set_var(lil, lil_to_string(lil_list_get(invars, i)), varvalues[i], LIL_SETVAR_LOCAL_NEW);
+            lil_free_value(varvalues[i]);
+        }
+    }
+    r = lil_parse_value(lil, argv[codeindex], 0);
+    if (invars || outvars) {
+        if (outvars) {
+            for (i=0; i<lil_list_size(outvars); i++)
+                varvalues[i] = lil_clone_value(lil_get_var(lil, lil_to_string(lil_list_get(outvars, i))));
+        } else {
+            for (i=0; i<lil_list_size(invars); i++)
+                varvalues[i] = lil_clone_value(lil_get_var(lil, lil_to_string(lil_list_get(invars, i))));
+        }
+    }
+    lil_pop_env(lil);
+    if (invars) {
+        if (outvars) {
+            for (i=0; i<lil_list_size(outvars); i++) {
+                lil_set_var(lil, lil_to_string(lil_list_get(outvars, i)), varvalues[i], LIL_SETVAR_LOCAL);
+                lil_free_value(varvalues[i]);
+            }
+        } else {
+            for (i=0; i<lil_list_size(invars); i++) {
+                lil_set_var(lil, lil_to_string(lil_list_get(invars, i)), varvalues[i], LIL_SETVAR_LOCAL);
+                lil_free_value(varvalues[i]);
+            }
+        }
+        lil_free_list(invars);
+        if (outvars) lil_free_list(outvars);
+        free(varvalues);
+    }
+    return r;
+}
+
 static LILCALLBACK lil_value_t fnc_jaileval(lil_t lil, size_t argc, lil_value_t* argv)
 {
     size_t i;
@@ -2390,7 +2449,7 @@ static LILCALLBACK lil_value_t fnc_return(lil_t lil, size_t argc, lil_value_t* a
     lil->env->breakrun = 1;
     lil_free_value(lil->env->retval);
     lil->env->retval = argc < 1 ? NULL : lil_clone_value(argv[0]);
-    return NULL;
+    return argc < 1 ? NULL : lil_clone_value(argv[0]);
 }
 
 static LILCALLBACK lil_value_t fnc_expr(lil_t lil, size_t argc, lil_value_t* argv)
@@ -2840,6 +2899,7 @@ static void register_stdcmds(lil_t lil)
     lil_register(lil, "topeval", fnc_topeval);
     lil_register(lil, "upeval", fnc_upeval);
     lil_register(lil, "downeval", fnc_downeval);
+    lil_register(lil, "enveval", fnc_enveval);
     lil_register(lil, "jaileval", fnc_jaileval);
     lil_register(lil, "count", fnc_count);
     lil_register(lil, "index", fnc_index);

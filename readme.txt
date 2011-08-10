@@ -517,6 +517,21 @@ LIL: A Little Interpreted Language
        evaluated in the environment where the most recent call to upeval was
        made.  This also works with topeval
 
+     enveval [invars] [outvars] <code>
+       the <code> will be executed in its own environment.  The environment
+       will be similar to a function's environment.  If invars is provided,
+       it is assumed to be a list with variable names to be copied from the
+       current environment to the new environment.  If outvars is provided, it
+       is assumed to be a list with variable names to be copied from the new
+       environment back to the current one (global variables will remain
+       global).  If invars is provided but not outvars, the variables in
+       invars will be copied back as if outvars was provided with the same
+       variable names.  To make the variables "one way" (that is, to copy
+       nothing back) just use an empty list for the outvars argument.  From
+       inside enveval both return and an immediate value can be used to
+       return a value.  Calling return will not cause the calling function
+       to exit
+
      jaileval ["clean"] <code>
        the <code> will be executed in its own LIL runtime.  Unless "clean"
        is specified, the new LIL runtime will get a copy of the currently
@@ -583,7 +598,8 @@ LIL: A Little Interpreted Language
      return [value]
        stops the execution of a function's code and uses <value> as the
        result of that function (note that normally the result of a function
-       is the result of the last command of that function)
+       is the result of the last command of that function).  The result of
+       return is always the passed value
      
      expr [...]
        combines all arguments into a single string and evaluates the
