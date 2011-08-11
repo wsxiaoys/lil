@@ -14,12 +14,12 @@ func do-something {} {
     # only y will be copied back to the current environment
     enveval {y z} {y} {
         local x
-        print "x inside enveval before changing is $x, y is $y and z is $z"
+        print "x inside enveval before changing is ${x}, y is $y and z is $z"
         set x 100 y 44 z 123
-        print "x inside enveval after changing is $x, y is $y and z is $z"
+        print "x inside enveval after changing is ${x}, y is $y and z is $z"
         quote 32
     }
-    print "x inside do-something is $x, y is $y and z is $z"
+    print "x inside do-something is ${x}, y is $y and z is $z"
 }
 
 print "setting x in the global environment to 300"
