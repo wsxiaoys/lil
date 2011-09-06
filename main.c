@@ -109,12 +109,37 @@ static LILCALLBACK lil_value_t fnc_system(lil_t lil, size_t argc, lil_value_t* a
     return r;
 }
 
+static LILCALLBACK lil_value_t fnc_readline(lil_t lil, size_t argc, lil_value_t* argv)
+{
+    size_t len = 0, size = 64;
+    char* buffer = malloc(size);
+    char ch;
+    lil_value_t retval;
+    for (;;) {
+        ch = fgetc(stdin);
+        if (ch == EOF) break;
+        if (ch == '\r') continue;
+        if (ch == '\n') break;
+        if (len < size) {
+            size += 64;
+            buffer = realloc(buffer, size);
+        }
+        buffer[len++] = ch;
+    }
+    buffer = realloc(buffer, len + 1);
+    buffer[len] = 0;
+    retval = lil_alloc_string(buffer);
+    free(buffer);
+    return retval;
+}
+
 static int repl(void)
 {
     char buffer[16384];
     lil_t lil = lil_new();
     lil_register(lil, "writechar", fnc_writechar);
     lil_register(lil, "system", fnc_system);
+    lil_register(lil, "readline", fnc_readline);
     printf("Little Interpreted Language Interactive Shell\n");
     lil_callback(lil, LIL_CALLBACK_EXIT, (lil_callback_proc_t)do_exit);
     while (running) {
