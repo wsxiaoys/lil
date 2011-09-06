@@ -6,7 +6,9 @@ LIL: A Little Interpreted Language
 -----------
   1. About
   2. LIL syntax
-  3. Standard LIL functions
+  3. LIL functions
+     3.1. Standard LIL functions
+     3.2. Command line interpreter LIL functions
   4. Integrating LIL in C programs
      4.1. Initialize LIL
      4.2. Execute LIL code
@@ -385,9 +387,11 @@ LIL: A Little Interpreted Language
  code itself is clean and compact which makes it easy to read and, if
  needed, modify.
 
+3. LIL functions
+----------------
 
-3. Standard LIL functions
--------------------------
+3.1. Standard LIL functions
+     ----------------------
 
    Here is a summary of the functions that LIL provides by default to all
  LIL scripts (in order of appearance in the lil.c file):
@@ -817,6 +821,23 @@ LIL: A Little Interpreted Language
        When using catcher for DSLs it is recommended to save the previous
        catcher.  For an example of catcher with comments see the catcher.lil
        source file.
+
+3.2. Command line interpreter LIL functions
+     --------------------------------------
+   The functions shown below are only available to the command line LIL
+ interpreter (the "lil" executable).
+
+     writechar code
+       writes the character defined by the given code (usually ASCII code)
+       to the standard output
+
+     system <args>
+       executes the system command defined by <args> and returns the data
+       placed in the command's standard output
+
+     readline
+       reads a string from the standard input until the end of file or end
+       of line mark/character is found and returns it
 
 
 4. Integrating LIL in C programs
