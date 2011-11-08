@@ -21,9 +21,13 @@
  * Kostas Michalopoulos <badsector@runtimelegend.com>
  */
 
-#ifndef WIN32
 #define _BSD_SOURCE
+#ifndef WIN32
 #include <unistd.h>
+#endif
+#ifdef __MINGW32__
+/* allow the definition of popen, etc */
+#undef __STRICT_ANSI__
 #endif
 #include <stdio.h>
 #include <stdlib.h>
@@ -42,7 +46,7 @@ static LILCALLBACK void do_exit(lil_t lil, lil_value_t val)
 
 static char* do_system(size_t argc, char** argv)
 {
-    #ifdef WIN32
+    #if defined(WIN32) || defined(WATCOMC)
     return NULL;
     #else
     char* cmd = NULL;
@@ -113,7 +117,7 @@ static LILCALLBACK lil_value_t fnc_readline(lil_t lil, size_t argc, lil_value_t*
 {
     size_t len = 0, size = 64;
     char* buffer = malloc(size);
-    char ch;
+    signed char ch;
     lil_value_t retval;
     for (;;) {
         ch = fgetc(stdin);
