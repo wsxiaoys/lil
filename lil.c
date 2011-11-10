@@ -2368,7 +2368,7 @@ static LILCALLBACK lil_value_t fnc_filter(lil_t lil, size_t argc, lil_value_t* a
     }
     list = lil_subst_to_list(lil, argv[base]);
     filtered = lil_alloc_list();
-    for (i=0; i<list->c; i++) {
+    for (i=0; i<list->c && !lil->env->breakrun; i++) {
         lil_set_var(lil, varname, list->v[i], LIL_SETVAR_LOCAL);
         r = lil_eval_expr(lil, argv[base + 1]);
         if (lil_to_boolean(r))
@@ -2436,7 +2436,7 @@ static LILCALLBACK lil_value_t fnc_foreach(lil_t lil, size_t argc, lil_value_t* 
         rv = lil_parse_value(lil, argv[codeidx], 0);
         if (rv->l) lil_list_append(rlist, rv);
         else lil_free_value(rv);
-        if (lil->error) break;
+        if (lil->env->breakrun || lil->error) break;
     }
     r = lil_list_to_value(rlist, 1);
     lil_free_list(list);
@@ -2564,7 +2564,7 @@ static LILCALLBACK lil_value_t fnc_while(lil_t lil, size_t argc, lil_value_t* ar
     if (argc < 1) return NULL;
     if (!strcmp(lil_to_string(argv[0]), "not")) base = not = 1;
     if (argc < (size_t)base + 2) return NULL;
-    while (!lil->error) {
+    while (!lil->error && !lil->env->breakrun) {
         val = lil_eval_expr(lil, argv[base]);
         if (!val || lil->error) return NULL;
         v = lil_to_boolean(val);
@@ -2585,7 +2585,7 @@ static LILCALLBACK lil_value_t fnc_for(lil_t lil, size_t argc, lil_value_t* argv
     lil_value_t val, r = NULL;
     if (argc < 4) return NULL;
     lil_free_value(lil_parse_value(lil, argv[0], 0));
-    while (!lil->error) {
+    while (!lil->error && !lil->env->breakrun) {
         val = lil_eval_expr(lil, argv[1]);
         if (!val || lil->error) return NULL;
         if (!lil_to_boolean(val)) {
