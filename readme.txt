@@ -901,8 +901,10 @@ LIL: A Little Interpreted Language
                            int funclevel)
 
    If 0 is given for codelen, LIL will simply use strlen for it.  Funclevel
- must always be 0 and is used by LIL itself when calling the code part of a
- function.
+ should always be 1, unless the evaluated code is supposed to be executed
+ inside the current environment.  Setting funclevel to 1 will reset (clear)
+ the breakrun flag (which is set by return to stop executing code in
+ lil_parse, lil_parse_value and loops).
  
    The function will return a LIL value which must be released by calling
  lil_free_value().  The LIL value is the code's result.
