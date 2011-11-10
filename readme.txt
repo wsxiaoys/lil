@@ -1029,13 +1029,25 @@ LIL: A Little Interpreted Language
                            const char* name,
                            lil_value_t val,
                            int local)
-   
+
  which can be used to set a variable to a value.  local must be one of
- LIL_SETVAR_LOCAL, LIL_SETVAR_LOCAL_NEW or LIL_SETVAR_GLOBAL.  Usually you
- need LIL_SETVAR_LOCAL or LIL_SETVAR_GLOBAL.  LIL_SETVAR_LOCAL_NEW will
- always allocate a new variable in the environment and should be used with
- lil_push_env() and lil_pop_env().  See lil.c for details on how to use
- these.
+ LIL_SETVAR_LOCAL, LIL_SETVAR_LOCAL_NEW, LIL_SETVAR_LOCAL_ONLY or
+ LIL_SETVAR_GLOBAL.  Usually you need LIL_SETVAR_LOCAL or LIL_SETVAR_GLOBAL.
+ LIL_SETVAR_LOCAL_NEW will always allocate a new variable in the environment
+ and should be used with lil_push_env() and lil_pop_env(). See lil.c for
+ details on how to use these.
+
+   LIL_SETVAR_LOCAL_ONLY will make sure that the variable is stored in the
+ local environment and can be used to avoid name collisions between variables
+ defined inside and outside functions.  It should be used by functions that
+ set their own variables to be used by the scripts (for example, foreach uses
+ this to avoid name collisions between its index variable and the global
+ environment).  When in doubt, use LIL_SETVAR_LOCAL if the variable's name is
+ provided by the script and the function is supposed to act on a variable,
+ otherwise use LIL_SETVAR_LOCAL_ONLY if the variable name is decided by the
+ function (with optional alteration of the name by the script, such as in
+ foreach) and the variable is to be reused (so LIL_SETVAR_LOCAL_NEW is not a
+ good candidate).
  
      lil_value_t lil_get_var(lil_t lil,
                              const char* name)

@@ -353,6 +353,8 @@ lil_var_t lil_set_var(lil_t lil, const char* name, lil_value_t val, int local)
     if (!name[0]) return NULL;
     if (local != LIL_SETVAR_LOCAL_NEW) {
         lil_var_t var = lil_find_var(lil, env, name);
+        if (local == LIL_SETVAR_LOCAL_ONLY && var && var->env == lil->rootenv && var->env != env)
+            var = NULL;
         if (((!var && env == lil->rootenv) || (var && var->env == lil->rootenv)) && lil->callback[LIL_CALLBACK_SETVAR]) {
             lil_setvar_callback_proc_t proc = (lil_setvar_callback_proc_t)lil->callback[LIL_CALLBACK_SETVAR];
             lil_value_t newval = val;
@@ -2370,7 +2372,7 @@ static LILCALLBACK lil_value_t fnc_filter(lil_t lil, size_t argc, lil_value_t* a
     list = lil_subst_to_list(lil, argv[base]);
     filtered = lil_alloc_list();
     for (i=0; i<list->c && !lil->env->breakrun; i++) {
-        lil_set_var(lil, varname, list->v[i], LIL_SETVAR_LOCAL);
+        lil_set_var(lil, varname, list->v[i], LIL_SETVAR_LOCAL_ONLY);
         r = lil_eval_expr(lil, argv[base + 1]);
         if (lil_to_boolean(r))
             lil_list_append(filtered, lil_clone_value(list->v[i]));
@@ -2433,7 +2435,7 @@ static LILCALLBACK lil_value_t fnc_foreach(lil_t lil, size_t argc, lil_value_t* 
     list = lil_subst_to_list(lil, argv[listidx]);
     for (i=0; i<list->c; i++) {
         lil_value_t rv;
-        lil_set_var(lil, varname, list->v[i], LIL_SETVAR_LOCAL);
+        lil_set_var(lil, varname, list->v[i], LIL_SETVAR_LOCAL_ONLY);
         rv = lil_parse_value(lil, argv[codeidx], 0);
         if (rv->l) lil_list_append(rlist, rv);
         else lil_free_value(rv);
