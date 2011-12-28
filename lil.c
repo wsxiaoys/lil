@@ -2215,6 +2215,7 @@ static LILCALLBACK lil_value_t fnc_enveval(lil_t lil, size_t argc, lil_value_t* 
     r = lil_parse_value(lil, argv[codeindex], 0);
     if (invars || outvars) {
         if (outvars) {
+            varvalues = realloc(varvalues, sizeof(lil_value_t)*lil_list_size(outvars));
             for (i=0; i<lil_list_size(outvars); i++)
                 varvalues[i] = lil_clone_value(lil_get_var(lil, lil_to_string(lil_list_get(outvars, i))));
         } else {
