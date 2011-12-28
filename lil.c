@@ -2073,7 +2073,7 @@ static LILCALLBACK lil_value_t fnc_quote(lil_t lil, size_t argc, lil_value_t* ar
 static LILCALLBACK lil_value_t fnc_set(lil_t lil, size_t argc, lil_value_t* argv)
 {
     size_t i = 0;
-    lil_var_t var;
+    lil_var_t var = NULL;
     int access = LIL_SETVAR_LOCAL;
     if (!argc) return NULL;
     if (!strcmp(lil_to_string(argv[0]), "global")) {
