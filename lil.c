@@ -2459,6 +2459,16 @@ static LILCALLBACK lil_value_t fnc_return(lil_t lil, size_t argc, lil_value_t* a
     return argc < 1 ? NULL : lil_clone_value(argv[0]);
 }
 
+static LILCALLBACK lil_value_t fnc_result(lil_t lil, size_t argc, lil_value_t* argv)
+{
+    if (argc > 0) {
+        lil_free_value(lil->env->retval);
+        lil->env->retval = lil_clone_value(argv[0]);
+        lil->env->retval_set = 1;
+    }
+    return lil->env->retval_set ? lil_clone_value(lil->env->retval) : NULL;
+}
+
 static LILCALLBACK lil_value_t fnc_expr(lil_t lil, size_t argc, lil_value_t* argv)
 {
     if (argc == 1) return lil_eval_expr(lil, argv[0]);
@@ -2919,6 +2929,7 @@ static void register_stdcmds(lil_t lil)
     lil_register(lil, "concat", fnc_concat);
     lil_register(lil, "foreach", fnc_foreach);
     lil_register(lil, "return", fnc_return);
+    lil_register(lil, "result", fnc_result);
     lil_register(lil, "expr", fnc_expr);
     lil_register(lil, "inc", fnc_inc);
     lil_register(lil, "dec", fnc_dec);

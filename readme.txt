@@ -604,6 +604,15 @@ LIL: A Little Interpreted Language
        result of that function (note that normally the result of a function
        is the result of the last command of that function).  The result of
        return is always the passed value
+
+     result [value]
+       sets or returns the current result value of a function but unlike
+       the return function, it doesn't stop the execution.  If no argument
+       is given, the function simply returns the current result value - if
+       no previous call to result was made, then this will return an empty
+       value even if other calls were made previously.  The result of this
+       function when an argument is given, is simply the given argument
+       itself
      
      expr [...]
        combines all arguments into a single string and evaluates the
