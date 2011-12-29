@@ -1,6 +1,6 @@
 /*
  * LIL - Little Interpreted Language
- * Copyright (C) 2010 Kostas Michalopoulos
+ * Copyright (C) 2010-2011 Kostas Michalopoulos
  *
  * This software is provided 'as-is', without any express or implied
  * warranty.  In no event will the authors be held liable for any damages
