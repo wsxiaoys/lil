@@ -339,10 +339,12 @@ LIL: A Little Interpreted Language
  itself.  When you access a variable for reading it (like when using it
  with the dollar) LIL looks in the local environment (where the variables
  are stored) and then the global environment.  When you use the "set"
- function to set the value of a variable LIL always look only in the local
- environment even if a variable with the same name exists in the global
- environment.  To set a global variable put the special "global" word as
- the first argument to the set function, like
+ function to set the value of a variable LIL always look first in the
+ local environment and if the variable isn't found, it looks in the global
+ environment.  If no variable is found, a new variable in the local
+ environment will be created.  To force a global variable to be set or
+ created, put the special "global" word as the first argument to the set
+ function, like
  
      set global level 32
  
@@ -350,7 +352,17 @@ LIL: A Little Interpreted Language
  that create variables always provide this special "global" first argument
  to force the assignment of global variables.  Note that the use of
  "global" is only needed for code that runs from functions.  Code that is
- executed outside a function always uses the global environment.
+ executed outside a function always uses the global environment.  To
+ force a local variable, you need to create an empty local variable first
+ by calling the "local" function, like
+
+    local level
+    set level 32
+
+ which first creates a local variable (even if a global with the same name
+ exists) with an empty value and then it sets its value to 32 (since the
+ set function first looks in the local environment, it will find the one
+ just made and will ignore any variable that may be in the global one).
 
    The last note on LIL's syntax is word concatenation.  This is really
  simple (and technically is not concatenation at all but it is easier to
