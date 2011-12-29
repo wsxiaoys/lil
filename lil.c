@@ -2285,7 +2285,7 @@ static LILCALLBACK lil_value_t fnc_index(lil_t lil, size_t argc, lil_value_t* ar
     lil_value_t r;
     if (argc < 2) return NULL;
     list = lil_subst_to_list(lil, argv[0]);
-    index = lil_to_integer(argv[1]);
+    index = (size_t)lil_to_integer(argv[1]);
     if (index >= list->c)
         r = NULL;
     else
