@@ -64,6 +64,7 @@ struct _lil_env_t
     lil_var_t* var;
     size_t vars;
     lil_value_t retval;
+    int retval_set;
     int breakrun;
 };
 
@@ -706,10 +707,11 @@ cleanup:
     lil->code = save_code;
     lil->clen = save_clen;
     lil->head = save_head;
-    if (funclevel) {
+    if (funclevel && lil->env->retval_set) {
         if (val) lil_free_value(val);
         val = lil->env->retval;
         lil->env->retval = NULL;
+        lil->env->retval_set = 0;
         lil->env->breakrun = 0;
     }
     lil->parse_depth--;
@@ -2453,6 +2455,7 @@ static LILCALLBACK lil_value_t fnc_return(lil_t lil, size_t argc, lil_value_t* a
     lil->env->breakrun = 1;
     lil_free_value(lil->env->retval);
     lil->env->retval = argc < 1 ? NULL : lil_clone_value(argv[0]);
+    lil->env->retval_set = 1;
     return argc < 1 ? NULL : lil_clone_value(argv[0]);
 }
 
