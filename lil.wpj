@@ -4,10 +4,10 @@ projectIdent
 VpeMain
 1
 WRect
-3296
-2531
+2106
+3280
 4016
-4769
+4759
 2
 MProject
 3
@@ -33,9 +33,9 @@ VComponent
 9
 WRect
 64
-123
+113
 2352
-2455
+2446
 0
 0
 10
@@ -43,7 +43,7 @@ WFileName
 7
 lil.tgt
 0
-3
+1
 11
 VComponent
 12
@@ -51,7 +51,7 @@ WRect
 1168
 1024
 2608
-2199
+2190
 0
 0
 13
