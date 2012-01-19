@@ -14,3 +14,5 @@ build/
 *.mk
 *.lb1
 *.exe
+
+*.tds

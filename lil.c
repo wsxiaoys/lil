@@ -1,6 +1,6 @@
 /*
  * LIL - Little Interpreted Language
- * Copyright (C) 2010-2011 Kostas Michalopoulos
+ * Copyright (C) 2010-2012 Kostas Michalopoulos
  *
  * This software is provided 'as-is', without any express or implied
  * warranty.  In no event will the authors be held liable for any damages
@@ -111,7 +111,7 @@ typedef struct _expreval_t
 {
     const char* code;
     size_t len, head;
-    int64_t ival;
+    lilint_t ival;
     double dval;
     int type;
     int error;
@@ -774,7 +774,7 @@ static void ee_skip_spaces(expreval_t* ee)
 
 static void ee_numeric_element(expreval_t* ee)
 {
-    int64_t fpart = 0, fpartlen = 1;
+    lilint_t fpart = 0, fpartlen = 1;
     ee->type = EE_INT;
     ee_skip_spaces(ee);
     ee->ival = 0;
@@ -854,7 +854,7 @@ static void ee_unary(expreval_t* ee)
         case '~':
             switch (ee->type) {
             case EE_FLOAT:
-                ee->ival = ~((int64_t)ee->dval);
+                ee->ival = ~((lilint_t)ee->dval);
                 ee->type = EE_INT;
                 break;
             case EE_INT:
@@ -893,7 +893,7 @@ static void ee_muldiv(expreval_t* ee)
          ee->code[ee->head] == '\\' ||
          ee->code[ee->head] == '%')) {
         double odval = ee->dval;
-        int64_t oival = ee->ival;
+        lilint_t oival = ee->ival;
 
         switch (ee->code[ee->head]) {
         case '*':
@@ -1048,7 +1048,7 @@ static void ee_muldiv(expreval_t* ee)
                     if (ee->dval == 0.0) {
                         ee->error = EERR_DIVISION_BY_ZERO;
                     } else {
-                        ee->ival = (int64_t)(odval/ee->dval);
+                        ee->ival = (lilint_t)(odval/ee->dval);
                     }
                     ee->type = EE_INT;
                     break;
@@ -1056,7 +1056,7 @@ static void ee_muldiv(expreval_t* ee)
                     if (ee->ival == 0) {
                         ee->error = EERR_DIVISION_BY_ZERO;
                     } else {
-                        ee->ival = (int64_t)(odval/(double)ee->ival);
+                        ee->ival = (lilint_t)(odval/(double)ee->ival);
                     }
                     break;
                 default:
@@ -1072,7 +1072,7 @@ static void ee_muldiv(expreval_t* ee)
                     if (ee->dval == 0.0) {
                         ee->error = EERR_DIVISION_BY_ZERO;
                     } else {
-                        ee->ival = (int64_t)((double)oival/ee->dval);
+                        ee->ival = (lilint_t)((double)oival/ee->dval);
                     }
                     ee->type = EE_INT;
                     break;
@@ -1105,7 +1105,7 @@ static void ee_addsub(expreval_t* ee)
         (ee->code[ee->head] == '+' ||
          ee->code[ee->head] == '-')) {
         double odval = ee->dval;
-        int64_t oival = ee->ival;
+        lilint_t oival = ee->ival;
 
         switch (ee->code[ee->head]) {
         case '+':
@@ -1198,7 +1198,7 @@ static void ee_shift(expreval_t* ee)
         ((ee->code[ee->head] == '<' && ee->code[ee->head + 1] == '<') ||
          (ee->code[ee->head] == '>' && ee->code[ee->head + 1] == '>'))) {
         double odval = ee->dval;
-        int64_t oival = ee->ival;
+        lilint_t oival = ee->ival;
         ee->head++;
 
         switch (ee->code[ee->head]) {
@@ -1210,11 +1210,11 @@ static void ee_shift(expreval_t* ee)
                 if (ee->error) return;
                 switch (ee->type) {
                 case EE_FLOAT:
-                    ee->ival = (int64_t)odval << (int64_t)ee->dval;
+                    ee->ival = (lilint_t)odval << (lilint_t)ee->dval;
                     ee->type = EE_INT;
                     break;
                 case EE_INT:
-                    ee->ival = (int64_t)odval << ee->ival;
+                    ee->ival = (lilint_t)odval << ee->ival;
                     break;
                 default:
                     ee->error = EERR_INVALID_TYPE;
@@ -1226,7 +1226,7 @@ static void ee_shift(expreval_t* ee)
                 if (ee->error) return;
                 switch (ee->type) {
                 case EE_FLOAT:
-                    ee->ival = oival << (int64_t)ee->dval;
+                    ee->ival = oival << (lilint_t)ee->dval;
                     ee->type = EE_INT;
                     break;
                 case EE_INT:
@@ -1248,11 +1248,11 @@ static void ee_shift(expreval_t* ee)
                 if (ee->error) return;
                 switch (ee->type) {
                 case EE_FLOAT:
-                    ee->ival = (int64_t)odval >> (int64_t)ee->dval;
+                    ee->ival = (lilint_t)odval >> (lilint_t)ee->dval;
                     ee->type = EE_INT;
                     break;
                 case EE_INT:
-                    ee->ival = (int64_t)odval >> ee->ival;
+                    ee->ival = (lilint_t)odval >> ee->ival;
                     break;
                 default:
                     ee->error = EERR_INVALID_TYPE;
@@ -1264,7 +1264,7 @@ static void ee_shift(expreval_t* ee)
                 if (ee->error) return;
                 switch (ee->type) {
                 case EE_FLOAT:
-                    ee->ival = oival >> (int64_t)ee->dval;
+                    ee->ival = oival >> (lilint_t)ee->dval;
                     ee->type = EE_INT;
                     break;
                 case EE_INT:
@@ -1294,7 +1294,7 @@ static void ee_compare(expreval_t* ee)
          (ee->code[ee->head] == '<' && ee->code[ee->head + 1] == '=') ||
          (ee->code[ee->head] == '>' && ee->code[ee->head + 1] == '='))) {
         double odval = ee->dval;
-        int64_t oival = ee->ival;
+        lilint_t oival = ee->ival;
         int op = 4;
         if (ee->code[ee->head] == '<' && !ispunct(ee->code[ee->head + 1])) op = 1;
         else if (ee->code[ee->head] == '>' && !ispunct(ee->code[ee->head + 1])) op = 2;
@@ -1461,7 +1461,7 @@ static void ee_equals(expreval_t* ee)
         ((ee->code[ee->head] == '=' && ee->code[ee->head + 1] == '=') ||
          (ee->code[ee->head] == '!' && ee->code[ee->head + 1] == '='))) {
         double odval = ee->dval;
-        int64_t oival = ee->ival;
+        lilint_t oival = ee->ival;
         int op = ee->code[ee->head] == '=' ? 1 : 2;
         ee->head += 2;
 
@@ -1551,7 +1551,7 @@ static void ee_bitand(expreval_t* ee)
     while (ee->head < ee->len && !ee->error &&
         (ee->code[ee->head] == '&' && !ispunct(ee->code[ee->head + 1]))) {
         double odval = ee->dval;
-        int64_t oival = ee->ival;
+        lilint_t oival = ee->ival;
         ee->head++;
 
         switch (ee->type) {
@@ -1560,11 +1560,11 @@ static void ee_bitand(expreval_t* ee)
             if (ee->error) return;
             switch (ee->type) {
             case EE_FLOAT:
-                ee->ival = (int64_t)odval & (int64_t)ee->dval;
+                ee->ival = (lilint_t)odval & (lilint_t)ee->dval;
                 ee->type = EE_INT;
                 break;
             case EE_INT:
-                ee->ival = (int64_t)odval & ee->ival;
+                ee->ival = (lilint_t)odval & ee->ival;
                 break;
             default:
                 ee->error = EERR_INVALID_TYPE;
@@ -1575,7 +1575,7 @@ static void ee_bitand(expreval_t* ee)
             if (ee->error) return;
             switch (ee->type) {
             case EE_FLOAT:
-                ee->ival = oival & (int64_t)ee->dval;
+                ee->ival = oival & (lilint_t)ee->dval;
                 ee->type = EE_INT;
                 break;
             case EE_INT:
@@ -1600,7 +1600,7 @@ static void ee_bitor(expreval_t* ee)
     while (ee->head < ee->len && !ee->error &&
         (ee->code[ee->head] == '|' && !ispunct(ee->code[ee->head + 1]))) {
         double odval = ee->dval;
-        int64_t oival = ee->ival;
+        lilint_t oival = ee->ival;
         ee->head++;
 
         switch (ee->type) {
@@ -1609,11 +1609,11 @@ static void ee_bitor(expreval_t* ee)
             if (ee->error) return;
             switch (ee->type) {
             case EE_FLOAT:
-                ee->ival = (int64_t)odval | (int64_t)ee->dval;
+                ee->ival = (lilint_t)odval | (lilint_t)ee->dval;
                 ee->type = EE_INT;
                 break;
             case EE_INT:
-                ee->ival = (int64_t)odval | ee->ival;
+                ee->ival = (lilint_t)odval | ee->ival;
                 break;
             default:
                 ee->error = EERR_INVALID_TYPE;
@@ -1624,7 +1624,7 @@ static void ee_bitor(expreval_t* ee)
             if (ee->error) return;
             switch (ee->type) {
             case EE_FLOAT:
-                ee->ival = oival | (int64_t)ee->dval;
+                ee->ival = oival | (lilint_t)ee->dval;
                 ee->type = EE_INT;
                 break;
             case EE_INT:
@@ -1649,7 +1649,7 @@ static void ee_logand(expreval_t* ee)
     while (ee->head < ee->len && !ee->error &&
         (ee->code[ee->head] == '&' && ee->code[ee->head + 1] == '&')) {
         double odval = ee->dval;
-        int64_t oival = ee->ival;
+        lilint_t oival = ee->ival;
         ee->head += 2;
 
         switch (ee->type) {
@@ -1698,7 +1698,7 @@ static void ee_logor(expreval_t* ee)
     while (ee->head < ee->len && !ee->error &&
         (ee->code[ee->head] == '|' && ee->code[ee->head + 1] == '|')) {
         double odval = ee->dval;
-        int64_t oival = ee->ival;
+        lilint_t oival = ee->ival;
         ee->head += 2;
 
         switch (ee->type) {
@@ -1822,9 +1822,9 @@ double lil_to_double(lil_value_t val)
     return atof(lil_to_string(val));
 }
 
-int64_t lil_to_integer(lil_value_t val)
+lilint_t lil_to_integer(lil_value_t val)
 {
-    return (int64_t)atoll(lil_to_string(val));
+    return (lilint_t)atoll(lil_to_string(val));
 }
 
 int lil_to_boolean(lil_value_t val)
@@ -1854,10 +1854,10 @@ lil_value_t lil_alloc_double(double num)
     return alloc_value(buff);
 }
 
-lil_value_t lil_alloc_integer(int64_t num)
+lil_value_t lil_alloc_integer(lilint_t num)
 {
     char buff[128];
-    sprintf(buff, "%lli", (long long int)num);
+    sprintf(buff, "%lli", (lilint_t)num);
     return alloc_value(buff);
 }
 
@@ -2340,15 +2340,15 @@ static LILCALLBACK lil_value_t fnc_slice(lil_t lil, size_t argc, lil_value_t* ar
 {
     lil_list_t list, slice;
     size_t i;
-    int64_t from, to;
+    lilint_t from, to;
     lil_value_t r;
     if (argc < 1) return NULL;
     if (argc < 2) return lil_clone_value(argv[0]);
     from = lil_to_integer(argv[1]);
     if (from < 0) from = 0;
     list = lil_subst_to_list(lil, argv[0]);
-    to = argc > 2 ? lil_to_integer(argv[2]) : (int64_t)list->c;
-    if (to > (int64_t)list->c) to = list->c;
+    to = argc > 2 ? lil_to_integer(argv[2]) : (lilint_t)list->c;
+    if (to > (lilint_t)list->c) to = list->c;
     if (to < from) to = from;
     slice = lil_alloc_list();
     for (i=(size_t)from; i<(size_t)to; i++)
@@ -2694,7 +2694,7 @@ static LILCALLBACK lil_value_t fnc_length(lil_t lil, size_t argc, lil_value_t* a
         if (i) total++;
         total += strlen(lil_to_string(argv[i]));
     }
-    return lil_alloc_integer((int64_t)total);
+    return lil_alloc_integer((lilint_t)total);
 }
 
 static lil_value_t real_trim(const char* str, const char* chars, int left, int right)

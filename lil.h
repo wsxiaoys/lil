@@ -1,6 +1,6 @@
 /*
  * LIL - Little Interpreted Language
- * Copyright (C) 2010-2011 Kostas Michalopoulos
+ * Copyright (C) 2010-2012 Kostas Michalopoulos
  *
  * This software is provided 'as-is', without any express or implied
  * warranty.  In no event will the authors be held liable for any damages
@@ -23,8 +23,6 @@
 
 #ifndef __LIL_H_INCLUDED__
 #define __LIL_H_INCLUDED__
-
-#include <stdint.h>
 
 #define LIL_VERSION_STRING "0.1"
 
@@ -52,6 +50,19 @@
 #else
 #define LILAPI
 #define LILCALLBACK
+#endif
+
+#ifdef LILINT_LONGLONG
+typedef long long int lilint_t;
+#else
+#ifdef LILINT_INT64
+typedef __int64 lilint_t;
+#else
+#ifndef LILINT_CUSTOM
+#include <stdint.h>
+typedef int64_t lilint_t;
+#endif
+#endif
 #endif
 
 typedef struct _lil_value_t* lil_value_t;
@@ -87,12 +98,12 @@ LILAPI int lil_error(lil_t lil, const char** msg, size_t* pos);
 
 LILAPI const char* lil_to_string(lil_value_t val);
 LILAPI double lil_to_double(lil_value_t val);
-LILAPI int64_t lil_to_integer(lil_value_t val);
+LILAPI lilint_t lil_to_integer(lil_value_t val);
 LILAPI int lil_to_boolean(lil_value_t val);
 
 LILAPI lil_value_t lil_alloc_string(const char* str);
 LILAPI lil_value_t lil_alloc_double(double num);
-LILAPI lil_value_t lil_alloc_integer(int64_t num);
+LILAPI lil_value_t lil_alloc_integer(lilint_t num);
 LILAPI void lil_free_value(lil_value_t val);
 
 LILAPI lil_value_t lil_clone_value(lil_value_t src);

@@ -31,25 +31,28 @@ LIL: A Little Interpreted Language
  via scripting.
  
    The source code of LIL consists of a pair of .c and .h files (lil.c and
- lil.h) of ANSI C90 with some extensions from C99 (mostly the use of
- stdint.h) which most modern compilers provide. The code has been tested to
+ lil.h) of ANSI C90 with some extensions from C99 (mostly the use of 64bit
+ integers) which most modern compilers provide. The code has been tested to
  compile and work with the following compilers:
  
-     * GNU C/C++ Compiler 3.x
+     * GNU C/C++ Compiler 3.x and 4.x
      * OpenWatcom C/C++ Compiler 1.9
      * LLVM Clang
      * Digital Mars C/C++ Compiler 8.42n
      * Tiny C Compiler 0.9.25
      * Microsoft Visual C++ 2010 Express (see below for older versions)
- 
- It has been tested to not compile under the following compilers:
- 
-     * Borland's free C/C++ Compiler 5.5.1
-       (missing stdint.h, atoll, should compile with modifications)
+     * Borland's free C/C++ Compiler 5.5.1 (needs special Makefile)
  
  Users of older versions of Microsoft Visual C++ need to use a stdint.h
  file provided by external sources.  A commonly used one stdint.h file for
- MSVC is http://msinttypes.googlecode.com/svn/trunk/stdint.h 
+ MSVC is http://msinttypes.googlecode.com/svn/trunk/stdint.h.  Alternatively
+ the global macro LILINT_INT64 can be used so that LIL will use __int64 for
+ integers instead of stdint.h's int64_t.
+
+ If the compiler doesn't use long long int nor __int64 for 64bit integers,
+ then the global macro LILINT_CUSTOM must be defined and a type definition
+ for lilint_t must exist before the inclusion of lil.h (including inside the
+ lil.c file).
  
  As a side note, LIL has nothing to do with the "Little Implementation
  Language" for PDP (which i learned about months after i chose the name
@@ -967,7 +970,7 @@ LIL: A Little Interpreted Language
  
      lil_value_t lil_alloc_string(const char* str)
      lil_value_t lil_alloc_double(double num)
-     lil_value_t lil_alloc_integer(int64_t num)
+     lil_value_t lil_alloc_integer(lilint_t num)
  
    Note that "alloc" here really means allocate: the values will allocate
  memory on the heap for their contents.  You are responsible for releasing
@@ -978,7 +981,7 @@ LIL: A Little Interpreted Language
 
      const char* lil_to_string(lil_value_t val)
      double lil_to_double(lil_value_t val)
-     int64_t lil_to_integer(lil_value_t val)
+     lilint_t lil_to_integer(lil_value_t val)
      int lil_to_boolean(lil_value_t val)
 
    You can also clone a value using lil_clone_value() and append characters
